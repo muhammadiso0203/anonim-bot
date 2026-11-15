@@ -1,0 +1,26 @@
+# Namuna. install.sh buni o'zi to'ldirib /etc/systemd/system/ ga qo'yadi.
+[Unit]
+Description=Anonim Ask Bot (Telegram)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__DIR__
+Environment=PYTHONUNBUFFERED=1
+ExecStart=__DIR__/.venv/bin/python bot.py
+Restart=always
+RestartSec=5
+# Juda tez qayta ishga tushaversa ham to'xtab qolmasin
+StartLimitIntervalSec=0
+
+# Xavfsizlik
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=__DIR__
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,20 @@
+services:
+  bot:
+    build: .
+    container_name: anonbot
+    restart: unless-stopped
+
+    # Token va adminlar shu fayldan olinadi
+    env_file:
+      - .env
+
+    # Baza konteyner o'chsa ham saqlanib qolsin
+    volumes:
+      - ./data:/app/data
+
+    # Loglar diskni to'ldirmasin
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
