@@ -50,6 +50,8 @@ EDITABLE: tuple[tuple[str, str], ...] = (
     ("🙃", "Hazil"),
     ("🐢", "Sekinroq yozing"),
     ("⬅️", "Orqaga"),
+    ("◀️", "Oldingi sahifa"),
+    ("▶️", "Keyingi sahifa"),
     ("♻️", "Asliga qaytarish"),
     ("🛠", "Admin panel"),
     ("👮", "Adminlar"),

@@ -197,11 +197,8 @@ def lang_kb(lang: str) -> InlineKeyboardMarkup:
     for code, name in LANG_NAMES.items():
         mark = " ✅" if code == lang else ""
         kb.row(
-            InlineKeyboardButton(
-                text=name + mark,
-                callback_data=LangCB(code=code).pack(),
-                **_style(GREEN if code == lang else BLUE),
-            )
+            _b(name + mark, style=GREEN if code == lang else BLUE,
+               callback_data=LangCB(code=code).pack())
         )
     kb.row(_b(label(lang, "btn_back"), callback_data=NavCB(to="settings").pack()))
     return kb.as_markup()
@@ -276,21 +273,15 @@ def users_kb(lang: str, page: int, pages: int) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     if pages > 1:
         kb.row(
-            InlineKeyboardButton(
-                text="◀️",
-                callback_data=AdminCB(action="users", arg=(page - 1) % pages).pack(),
-                **_style(BLUE),
-            ),
+            _b(label(lang, "btn_prev"),
+               callback_data=AdminCB(action="users", arg=(page - 1) % pages).pack()),
             InlineKeyboardButton(
                 text=f"{page + 1}/{pages}",
                 callback_data=AdminCB(action="users", arg=page).pack(),
                 **_style(BLUE),
             ),
-            InlineKeyboardButton(
-                text="▶️",
-                callback_data=AdminCB(action="users", arg=(page + 1) % pages).pack(),
-                **_style(BLUE),
-            ),
+            _b(label(lang, "btn_next"),
+               callback_data=AdminCB(action="users", arg=(page + 1) % pages).pack()),
         )
     kb.row(
         _b(
@@ -357,13 +348,7 @@ def sub_kb(lang: str, rows: list) -> InlineKeyboardMarkup:
         )
         if not link:
             continue
-        kb.row(
-            InlineKeyboardButton(
-                text="📢 " + (row["title"] or row["username"] or "Kanal"),
-                url=link,
-                **_style(BLUE),
-            )
-        )
+        kb.row(_b("📢 " + (row["title"] or row["username"] or "Kanal"), url=link))
     kb.row(
         _b(label(lang, "btn_sub_check"), style=GREEN,
            callback_data=SubCB(action="check").pack())
