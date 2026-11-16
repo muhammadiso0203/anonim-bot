@@ -224,10 +224,13 @@ def admin_kb(lang: str) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.row(
         _b(label(lang, "btn_adm_stats"), callback_data=AdminCB(action="stats").pack()),
-        _b(label(lang, "btn_adm_broadcast"), callback_data=AdminCB(action="broadcast").pack()),
+        _b(label(lang, "btn_adm_users"), callback_data=AdminCB(action="users").pack()),
     )
     kb.row(
+        _b(label(lang, "btn_adm_broadcast"), callback_data=AdminCB(action="broadcast").pack()),
         _b(label(lang, "btn_adm_admins"), callback_data=AdminCB(action="admins").pack()),
+    )
+    kb.row(
         _b(label(lang, "btn_adm_emoji"), callback_data=EmojiCB(action="back").pack()),
     )
     kb.row(
@@ -252,6 +255,38 @@ def admins_kb(lang: str, rows: list, owners: list[int]) -> InlineKeyboardMarkup:
     for uid in owners:
         kb.row(_b(f"🔒 {uid}", callback_data=AdminCB(action="owner", arg=uid).pack()))
     kb.row(_b(label(lang, "btn_adm_add"), style=GREEN, callback_data=AdminCB(action="add").pack()))
+    kb.row(_b(label(lang, "btn_back"), callback_data=AdminCB(action="home").pack()))
+    return kb.as_markup()
+
+
+def users_kb(lang: str, page: int, pages: int) -> InlineKeyboardMarkup:
+    """Foydalanuvchilar ro'yxati: sahifalash + CSV."""
+    kb = InlineKeyboardBuilder()
+    if pages > 1:
+        kb.row(
+            InlineKeyboardButton(
+                text="◀️",
+                callback_data=AdminCB(action="users", arg=(page - 1) % pages).pack(),
+                **_style(BLUE),
+            ),
+            InlineKeyboardButton(
+                text=f"{page + 1}/{pages}",
+                callback_data=AdminCB(action="users", arg=page).pack(),
+                **_style(BLUE),
+            ),
+            InlineKeyboardButton(
+                text="▶️",
+                callback_data=AdminCB(action="users", arg=(page + 1) % pages).pack(),
+                **_style(BLUE),
+            ),
+        )
+    kb.row(
+        _b(
+            label(lang, "btn_users_csv"),
+            style=GREEN,
+            callback_data=AdminCB(action="users_csv").pack(),
+        )
+    )
     kb.row(_b(label(lang, "btn_back"), callback_data=AdminCB(action="home").pack()))
     return kb.as_markup()
 

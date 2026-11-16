@@ -122,6 +122,7 @@ o'tishlari" ga qo'shilmaydi.
 | Tugma | Vazifasi |
 |---|---|
 | 📊 Statistika | Foydalanuvchilar, xabarlar, havola o'tishlari, bloklar |
+| 👥 Foydalanuvchilar | To'liq ro'yxat: ism, username, ID, qo'shilgan sana, qabul qilgan va yuborgan xabarlari soni. 10 tadan sahifalanadi, **📤 Ro'yxatni yuklab olish** tugmasi CSV qilib beradi (Excel'da ochiladi) |
 | 📣 Xabar yuborish | Barcha foydalanuvchilarga xabar (broadcast) |
 | 👮 Adminlar | Ro'yxat, ➕ qo'shish (ID yoki forward orqali), ❌ o'chirish |
 | 😀 Emojilar | Bot matnlaridagi emojilarni almashtirish |

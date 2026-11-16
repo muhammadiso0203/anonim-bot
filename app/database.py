@@ -321,6 +321,33 @@ async def blocked_list(owner_id: int) -> list[aiosqlite.Row]:
     return list(await cur.fetchall())
 
 
+# ------------------------------------------------- foydalanuvchilar ro'yxati
+
+_USER_LIST_SQL = (
+    "SELECT u.user_id, u.username, u.first_name, u.lang, u.accepting,"
+    " u.stopped_bot, u.created_at, u.code,"
+    " (SELECT COUNT(*) FROM messages m WHERE m.receiver_id = u.user_id) AS got,"
+    " (SELECT COUNT(*) FROM messages m WHERE m.sender_id = u.user_id) AS sent"
+    " FROM users u ORDER BY u.created_at DESC, u.user_id DESC"
+)
+
+
+async def users_count() -> int:
+    return await _scalar("SELECT COUNT(*) FROM users")
+
+
+async def users_page(limit: int, offset: int) -> list:
+    """Yangi qo'shilganlar birinchi bo'lib."""
+    cur = await db().execute(_USER_LIST_SQL + " LIMIT ? OFFSET ?", (limit, offset))
+    return list(await cur.fetchall())
+
+
+async def users_all() -> list:
+    """CSV ga chiqarish uchun hammasi."""
+    cur = await db().execute(_USER_LIST_SQL)
+    return list(await cur.fetchall())
+
+
 # ------------------------------------------------------------- settings
 
 async def get_setting(key: str) -> Optional[str]:

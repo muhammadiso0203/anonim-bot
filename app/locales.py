@@ -188,6 +188,18 @@ TEXTS: dict[str, dict[str, str]] = {
         ),
         "btn_adm_stats": "📊 Statistika",
         "btn_adm_broadcast": "📣 Xabar yuborish",
+        "btn_adm_users": "👥 Foydalanuvchilar",
+        "btn_users_csv": "📤 Ro'yxatni yuklab olish",
+        "users_title": (
+            "👥 <b>Foydalanuvchilar</b> — {total} ta\n"
+            "<blockquote>✅ Faol: {active}\n"
+            "🔕 Botni to'xtatgan: {stopped}\n"
+            "🆕 Bugun qo'shilgan: {today}</blockquote>\n"
+            "{rows}"
+        ),
+        "users_row": "{num}. {name} — <code>{uid}</code>\n     💬 {got} · 📤 {sent} · 📅 {date}",
+        "users_empty": "👥 Hali foydalanuvchi yo'q.",
+        "users_csv_caption": "👥 Barcha foydalanuvchilar — {total} ta",
         "btn_adm_admins": "👮 Adminlar",
         "btn_adm_emoji": "😀 Emojilar",
         "btn_adm_add": "➕ Admin qo'shish",
@@ -410,6 +422,18 @@ TEXTS: dict[str, dict[str, str]] = {
         ),
         "btn_adm_stats": "📊 Статистика",
         "btn_adm_broadcast": "📣 Рассылка",
+        "btn_adm_users": "👥 Пользователи",
+        "btn_users_csv": "📤 Скачать список",
+        "users_title": (
+            "👥 <b>Пользователи</b> — {total}\n"
+            "<blockquote>✅ Активных: {active}\n"
+            "🔕 Остановили бота: {stopped}\n"
+            "🆕 Новых сегодня: {today}</blockquote>\n"
+            "{rows}"
+        ),
+        "users_row": "{num}. {name} — <code>{uid}</code>\n     💬 {got} · 📤 {sent} · 📅 {date}",
+        "users_empty": "👥 Пользователей пока нет.",
+        "users_csv_caption": "👥 Все пользователи — {total}",
         "btn_adm_admins": "👮 Админы",
         "btn_adm_emoji": "😀 Эмодзи",
         "btn_adm_add": "➕ Добавить админа",
@@ -628,6 +652,18 @@ TEXTS: dict[str, dict[str, str]] = {
         ),
         "btn_adm_stats": "📊 Statistics",
         "btn_adm_broadcast": "📣 Broadcast",
+        "btn_adm_users": "👥 Users",
+        "btn_users_csv": "📤 Download the list",
+        "users_title": (
+            "👥 <b>Users</b> — {total}\n"
+            "<blockquote>✅ Active: {active}\n"
+            "🔕 Stopped the bot: {stopped}\n"
+            "🆕 New today: {today}</blockquote>\n"
+            "{rows}"
+        ),
+        "users_row": "{num}. {name} — <code>{uid}</code>\n     💬 {got} · 📤 {sent} · 📅 {date}",
+        "users_empty": "👥 No users yet.",
+        "users_csv_caption": "👥 All users — {total}",
         "btn_adm_admins": "👮 Admins",
         "btn_adm_emoji": "😀 Emojis",
         "btn_adm_add": "➕ Add admin",

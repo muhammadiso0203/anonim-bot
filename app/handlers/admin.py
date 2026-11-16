@@ -2,18 +2,35 @@
 from __future__ import annotations
 
 import asyncio
+import csv
+import io
 import logging
 from typing import Optional
 
-from aiogram import Bot, Router
+from aiogram import Bot, Router, html
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramRetryAfter
 from aiogram.filters import Command, Filter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message, TelegramObject
+from aiogram.types import (
+    BufferedInputFile,
+    CallbackQuery,
+    InlineKeyboardMarkup,
+    Message,
+    TelegramObject,
+)
 
 import config
 from app import database as db, emoji_pack
-from app.keyboards import AdminCB, EmojiCB, admin_back_kb, admin_kb, admins_kb, emoji_item_kb, emoji_list_kb
+from app.keyboards import (
+    AdminCB,
+    EmojiCB,
+    admin_back_kb,
+    admin_kb,
+    admins_kb,
+    emoji_item_kb,
+    emoji_list_kb,
+    users_kb,
+)
 from app.locales import t
 from app.states import AdminAdd, AdminBroadcast, EmojiSet
 
@@ -44,6 +61,70 @@ async def _home_view(lang: str) -> tuple[str, InlineKeyboardMarkup]:
 
 async def _stats_view(lang: str) -> tuple[str, InlineKeyboardMarkup]:
     return t(lang, "admin_stats", **await db.global_stats()), admin_back_kb(lang)
+
+
+USERS_PER_PAGE = 10
+
+
+def _user_name(row) -> str:
+    name = (row["first_name"] or "").strip()
+    shown = html.quote(name) if name else ""
+    if row["username"]:
+        tag = "@" + html.quote(row["username"])
+        shown = f"{shown} ({tag})" if shown else tag
+    return shown or "—"
+
+
+async def _users_view(lang: str, page: int = 0) -> tuple[str, InlineKeyboardMarkup]:
+    total = await db.users_count()
+    if total == 0:
+        return t(lang, "users_empty"), admin_back_kb(lang)
+
+    pages = max(1, (total + USERS_PER_PAGE - 1) // USERS_PER_PAGE)
+    page = max(0, min(page, pages - 1))
+    rows = await db.users_page(USERS_PER_PAGE, page * USERS_PER_PAGE)
+    stats = await db.global_stats()
+
+    lines = [
+        t(
+            lang,
+            "users_row",
+            num=page * USERS_PER_PAGE + i,
+            name=_user_name(row),
+            uid=row["user_id"],
+            got=row["got"],
+            sent=row["sent"],
+            date=(row["created_at"] or "")[:10],
+        )
+        for i, row in enumerate(rows, start=1)
+    ]
+    text = t(
+        lang,
+        "users_title",
+        total=total,
+        active=stats["active_users"],
+        stopped=total - stats["active_users"],
+        today=stats["new_today"],
+        rows="\n".join(lines),
+    )
+    return text, users_kb(lang, page, pages)
+
+
+def _users_csv(rows: list) -> bytes:
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(
+        ["user_id", "username", "first_name", "lang", "accepting",
+         "stopped_bot", "created_at", "received", "sent", "code"]
+    )
+    for row in rows:
+        writer.writerow([
+            row["user_id"], row["username"] or "", row["first_name"] or "",
+            row["lang"], row["accepting"], row["stopped_bot"],
+            row["created_at"], row["got"], row["sent"], row["code"],
+        ])
+    # utf-8-sig — Excel kirill/o'zbek harflarini to'g'ri ochishi uchun
+    return buf.getvalue().encode("utf-8-sig")
 
 
 async def _admins_view(lang: str) -> tuple[str, InlineKeyboardMarkup]:
@@ -93,7 +174,7 @@ async def cmd_broadcast(message: Message, state: FSMContext, lang: str) -> None:
 
 @router.callback_query(AdminCB.filter())
 async def cb_admin(
-    call: CallbackQuery, callback_data: AdminCB, state: FSMContext, lang: str
+    call: CallbackQuery, callback_data: AdminCB, state: FSMContext, lang: str, bot: Bot
 ) -> None:
     action = callback_data.action
 
@@ -104,6 +185,17 @@ async def cb_admin(
         text, markup = await _stats_view(lang)
     elif action == "admins":
         text, markup = await _admins_view(lang)
+    elif action == "users":
+        text, markup = await _users_view(lang, callback_data.arg)
+    elif action == "users_csv":
+        rows = await db.users_all()
+        await bot.send_document(
+            call.from_user.id,
+            BufferedInputFile(_users_csv(rows), filename="foydalanuvchilar.csv"),
+            caption=t(lang, "users_csv_caption", total=len(rows)),
+        )
+        await call.answer()
+        return
     elif action == "broadcast":
         await state.set_state(AdminBroadcast.writing)
         await _safe_edit(call, t(lang, "broadcast_prompt"), admin_back_kb(lang))
