@@ -259,6 +259,101 @@ TEXTS: dict[str, dict[str, str]] = {
             "Bot egasida Telegram Premium bo'lishi kerak (yoki bot username'i "
             "Fragment'dan olingan bo'lishi). Emojilar oddiy holatga qaytarildi."
         ),
+        # --- majburiy obuna
+        "sub_required": (
+            "📢 <b>Botdan foydalanish uchun avval quyidagiga a'zo bo'ling:</b>\n"
+            "<blockquote>A'zo bo'lgach «Tekshirish» tugmasini bosing.</blockquote>"
+        ),
+        "sub_fail": "⚠️ Hali hammasiga a'zo bo'lmadingiz. Tekshirib qayta bosing.",
+        "sub_ok": "✅ Rahmat! Endi botdan to'liq foydalanishingiz mumkin.",
+        "btn_sub_check": "✅ Tekshirish",
+        # --- kanallar (admin)
+        "btn_adm_channels": "📢 Kanallar",
+        "btn_adm_channel_add": "➕ Kanal qo'shish",
+        "channels_title": (
+            "📢 <b>Majburiy obuna</b> — {count} ta kanal\n\n"
+            "❌ bosilsa kanal ro'yxatdan olinadi.\n"
+            "<blockquote>Ro'yxat bo'sh bo'lsa majburiy obuna o'chiq bo'ladi.</blockquote>"
+        ),
+        "channels_empty": (
+            "📢 <b>Majburiy obuna</b>\n\n"
+            "Hozircha kanal qo'shilmagan — obuna talab qilinmaydi."
+        ),
+        "channel_add_prompt": (
+            "➕ <b>Kanal qo'shish</b>\n\n"
+            "Kanaldan istalgan postni shu yerga <b>forward</b> qiling,\n"
+            "yoki kanal manzilini yozing: <code>@kanal_nomi</code>\n\n"
+            "⚠️ Bot o'sha kanalda <b>admin</b> bo'lishi shart — aks holda a'zolikni "
+            "tekshira olmaydi.\n\nBekor qilish — /admin"
+        ),
+        "channel_added": "✅ Qo'shildi: <b>{title}</b>",
+        "channel_removed": "✅ Kanal ro'yxatdan olindi.",
+        "channel_bad": "⚠️ Kanal aniqlanmadi. Postni forward qiling yoki @nomini yuboring.",
+        "channel_not_admin": (
+            "⚠️ Bot bu kanalda admin emas yoki kanalga kira olmadi.\n"
+            "Avval botni kanalga admin qiling, so'ng qayta urinib ko'ring."
+        ),
+        # --- shikoyat va ban
+        "btn_report": "⚠️ Shikoyat",
+        "report_sent": "✅ Shikoyatingiz adminlarga yuborildi.",
+        "report_already": "ℹ️ Bu xabar uchun shikoyat allaqachon yuborilgan.",
+        "admin_report": (
+            "⚠️ <b>Yangi shikoyat</b>\n"
+            "<blockquote>{text}</blockquote>\n"
+            "Muallifni banlasangiz, u boshqa hech kimga anonim yoza olmaydi."
+        ),
+        "btn_ban": "🚫 Banlash",
+        "btn_ignore": "✅ E'tiborsiz",
+        "ban_done": "🚫 Muallif banlandi.",
+        "report_closed": "✅ Shikoyat yopildi.",
+        "you_are_banned": (
+            "🚫 <b>Siz botdan foydalana olmaysiz.</b>\n"
+            "Anonim xabar yuborish huquqingiz adminlar tomonidan cheklangan."
+        ),
+        "btn_adm_banned": "🚫 Banlanganlar",
+        "banned_title": "🚫 <b>Banlanganlar</b> — {count} ta\n\nBanni olish uchun bosing:",
+        "banned_empty": "✅ Banlangan foydalanuvchi yo'q.",
+        "unban_done": "✅ Ban olib tashlandi.",
+        # --- broadcast
+        "bc_target": "📣 <b>Xabar yuborish</b>\n\nKimga yuboramiz?",
+        "btn_bc_all": "👥 Hammaga ({n})",
+        "btn_bc_active": "✅ Faollarga ({n})",
+        "btn_bc_got": "💬 Xabar olganlarga ({n})",
+        "bc_ask": "📣 Yuboriladigan xabarni tashlang.\n\nBekor qilish — /admin",
+        "bc_preview": (
+            "📣 <b>Yuborishdan oldin ko'rib chiqing</b>\n"
+            "<blockquote>Yuqoridagi xabar <b>{n}</b> ta foydalanuvchiga ketadi.</blockquote>"
+        ),
+        "btn_bc_send": "📤 Yuborish",
+        "bc_progress": "📤 <b>Yuborilmoqda…</b>\n\n{done} / {total}\n✅ {ok}  ❌ {failed}",
+        "btn_bc_stop": "⛔️ To'xtatish",
+        "bc_stopped": "⛔️ To'xtatildi.",
+        # --- bot sozlamalari
+        "btn_adm_settings": "⚙️ Bot sozlamalari",
+        "bot_settings_title": (
+            "⚙️ <b>Bot sozlamalari</b>\n\n"
+            "Bosib yoqing yoki o'chiring. O'zgarish darhol kuchga kiradi.\n"
+            "<blockquote>Bu yerdagi sozlamalar config.py dagidan ustun turadi.</blockquote>"
+        ),
+        "set_reply_btn": "Javob berish tugmasi",
+        "set_block_btn": "Bloklash tugmasi",
+        "set_image_btn": "Rasm qilish tugmasi",
+        "set_delete_btn": "O'chirish tugmasi",
+        "set_auto_image": "Rasmni avtomatik yuborish",
+        "set_colors": "Rangli tugmalar",
+        "set_report_btn": "Shikoyat tugmasi",
+        # --- zaxira va kunlik statistika
+        "btn_adm_backup": "💾 Zaxira nusxa",
+        "backup_caption": "💾 Baza zaxirasi — {date}\n👥 {users} foydalanuvchi · 💬 {messages} xabar",
+        "backup_failed": "⚠️ Zaxira olinmadi: {error}",
+        "btn_adm_daily": "📈 Kunlik",
+        "daily_title": (
+            "📈 <b>Oxirgi {days} kun</b>\n"
+            "<blockquote>👥 yangi · 💬 xabar · 👀 o'tish</blockquote>\n"
+            "<pre>{chart}</pre>"
+        ),
+        "btn_daily_7": "📈 7 kun",
+        "btn_daily_30": "📈 30 kun",
         "admin_only": "⛔️ Bu buyruq faqat adminlar uchun.",
         "admin_stats": (
             "📊 <b>Umumiy statistika</b>\n\n"
@@ -490,6 +585,95 @@ TEXTS: dict[str, dict[str, str]] = {
             "У владельца бота должен быть Telegram Premium (или юзернейм с "
             "Fragment). Эмодзи возвращены к обычным."
         ),
+        "sub_required": (
+            "📢 <b>Чтобы пользоваться ботом, подпишитесь:</b>\n"
+            "<blockquote>После подписки нажмите «Проверить».</blockquote>"
+        ),
+        "sub_fail": "⚠️ Вы подписаны не на всё. Подпишитесь и нажмите ещё раз.",
+        "sub_ok": "✅ Спасибо! Теперь бот доступен полностью.",
+        "btn_sub_check": "✅ Проверить",
+        "btn_adm_channels": "📢 Каналы",
+        "btn_adm_channel_add": "➕ Добавить канал",
+        "channels_title": (
+            "📢 <b>Обязательная подписка</b> — каналов: {count}\n\n"
+            "❌ убирает канал из списка.\n"
+            "<blockquote>Если список пуст, подписка не требуется.</blockquote>"
+        ),
+        "channels_empty": (
+            "📢 <b>Обязательная подписка</b>\n\n"
+            "Каналы не добавлены — подписка не требуется."
+        ),
+        "channel_add_prompt": (
+            "➕ <b>Добавить канал</b>\n\n"
+            "Перешлите сюда любой пост из канала,\n"
+            "или напишите адрес: <code>@имя_канала</code>\n\n"
+            "⚠️ Бот должен быть <b>админом</b> этого канала, иначе он не сможет "
+            "проверять подписку.\n\nОтмена — /admin"
+        ),
+        "channel_added": "✅ Добавлен: <b>{title}</b>",
+        "channel_removed": "✅ Канал убран из списка.",
+        "channel_bad": "⚠️ Канал не определён. Перешлите пост или пришлите @имя.",
+        "channel_not_admin": (
+            "⚠️ Бот не админ в этом канале или не имеет к нему доступа.\n"
+            "Сделайте бота админом канала и попробуйте снова."
+        ),
+        "btn_report": "⚠️ Пожаловаться",
+        "report_sent": "✅ Жалоба отправлена админам.",
+        "report_already": "ℹ️ На это сообщение жалоба уже отправлена.",
+        "admin_report": (
+            "⚠️ <b>Новая жалоба</b>\n"
+            "<blockquote>{text}</blockquote>\n"
+            "Если забаните автора, он больше никому не сможет писать анонимно."
+        ),
+        "btn_ban": "🚫 Забанить",
+        "btn_ignore": "✅ Игнорировать",
+        "ban_done": "🚫 Автор забанен.",
+        "report_closed": "✅ Жалоба закрыта.",
+        "you_are_banned": (
+            "🚫 <b>Вы не можете пользоваться ботом.</b>\n"
+            "Админы ограничили вам отправку анонимных сообщений."
+        ),
+        "btn_adm_banned": "🚫 Забаненные",
+        "banned_title": "🚫 <b>Забаненные</b> — {count}\n\nНажмите, чтобы разбанить:",
+        "banned_empty": "✅ Забаненных нет.",
+        "unban_done": "✅ Бан снят.",
+        "bc_target": "📣 <b>Рассылка</b>\n\nКому отправляем?",
+        "btn_bc_all": "👥 Всем ({n})",
+        "btn_bc_active": "✅ Активным ({n})",
+        "btn_bc_got": "💬 Получавшим сообщения ({n})",
+        "bc_ask": "📣 Пришлите сообщение для рассылки.\n\nОтмена — /admin",
+        "bc_preview": (
+            "📣 <b>Проверьте перед отправкой</b>\n"
+            "<blockquote>Сообщение выше уйдёт <b>{n}</b> пользователям.</blockquote>"
+        ),
+        "btn_bc_send": "📤 Отправить",
+        "bc_progress": "📤 <b>Отправка…</b>\n\n{done} / {total}\n✅ {ok}  ❌ {failed}",
+        "btn_bc_stop": "⛔️ Остановить",
+        "bc_stopped": "⛔️ Остановлено.",
+        "btn_adm_settings": "⚙️ Настройки бота",
+        "bot_settings_title": (
+            "⚙️ <b>Настройки бота</b>\n\n"
+            "Нажмите, чтобы включить или выключить. Применяется сразу.\n"
+            "<blockquote>Эти настройки важнее того, что указано в config.py.</blockquote>"
+        ),
+        "set_reply_btn": "Кнопка «Ответить»",
+        "set_block_btn": "Кнопка «Заблокировать»",
+        "set_image_btn": "Кнопка «Сделать картинку»",
+        "set_delete_btn": "Кнопка «Удалить»",
+        "set_auto_image": "Картинка автоматически",
+        "set_colors": "Цветные кнопки",
+        "set_report_btn": "Кнопка «Пожаловаться»",
+        "btn_adm_backup": "💾 Резервная копия",
+        "backup_caption": "💾 Копия базы — {date}\n👥 {users} польз. · 💬 {messages} сообщ.",
+        "backup_failed": "⚠️ Не удалось сделать копию: {error}",
+        "btn_adm_daily": "📈 По дням",
+        "daily_title": (
+            "📈 <b>Последние {days} дней</b>\n"
+            "<blockquote>👥 новые · 💬 сообщения · 👀 переходы</blockquote>\n"
+            "<pre>{chart}</pre>"
+        ),
+        "btn_daily_7": "📈 7 дней",
+        "btn_daily_30": "📈 30 дней",
         "admin_only": "⛔️ Команда только для админов.",
         "admin_stats": (
             "📊 <b>Общая статистика</b>\n\n"
@@ -719,6 +903,95 @@ TEXTS: dict[str, dict[str, str]] = {
             "The bot's owner needs Telegram Premium (or a username bought on "
             "Fragment). Emojis were reset to plain."
         ),
+        "sub_required": (
+            "📢 <b>To use the bot, subscribe first:</b>\n"
+            "<blockquote>Then press «Check».</blockquote>"
+        ),
+        "sub_fail": "⚠️ You're not subscribed to all of them yet. Subscribe and press again.",
+        "sub_ok": "✅ Thanks! The bot is fully available now.",
+        "btn_sub_check": "✅ Check",
+        "btn_adm_channels": "📢 Channels",
+        "btn_adm_channel_add": "➕ Add a channel",
+        "channels_title": (
+            "📢 <b>Required subscription</b> — {count} channel(s)\n\n"
+            "❌ removes a channel from the list.\n"
+            "<blockquote>An empty list means no subscription is required.</blockquote>"
+        ),
+        "channels_empty": (
+            "📢 <b>Required subscription</b>\n\n"
+            "No channels added — subscription isn't required."
+        ),
+        "channel_add_prompt": (
+            "➕ <b>Add a channel</b>\n\n"
+            "Forward any post from the channel here,\n"
+            "or send its address: <code>@channel_name</code>\n\n"
+            "⚠️ The bot must be an <b>admin</b> of that channel, otherwise it can't "
+            "check membership.\n\nCancel — /admin"
+        ),
+        "channel_added": "✅ Added: <b>{title}</b>",
+        "channel_removed": "✅ Channel removed from the list.",
+        "channel_bad": "⚠️ Channel not recognised. Forward a post or send @name.",
+        "channel_not_admin": (
+            "⚠️ The bot isn't an admin there, or can't reach the channel.\n"
+            "Make the bot an admin of the channel and try again."
+        ),
+        "btn_report": "⚠️ Report",
+        "report_sent": "✅ Your report was sent to the admins.",
+        "report_already": "ℹ️ This message has already been reported.",
+        "admin_report": (
+            "⚠️ <b>New report</b>\n"
+            "<blockquote>{text}</blockquote>\n"
+            "If you ban the author, they won't be able to write to anyone anonymously."
+        ),
+        "btn_ban": "🚫 Ban",
+        "btn_ignore": "✅ Ignore",
+        "ban_done": "🚫 The author has been banned.",
+        "report_closed": "✅ Report closed.",
+        "you_are_banned": (
+            "🚫 <b>You can't use this bot.</b>\n"
+            "The admins have restricted your access to anonymous messaging."
+        ),
+        "btn_adm_banned": "🚫 Banned",
+        "banned_title": "🚫 <b>Banned</b> — {count}\n\nTap to unban:",
+        "banned_empty": "✅ Nobody is banned.",
+        "unban_done": "✅ The ban was lifted.",
+        "bc_target": "📣 <b>Broadcast</b>\n\nWho should receive it?",
+        "btn_bc_all": "👥 Everyone ({n})",
+        "btn_bc_active": "✅ Active ({n})",
+        "btn_bc_got": "💬 Those who got messages ({n})",
+        "bc_ask": "📣 Send the message to broadcast.\n\nCancel — /admin",
+        "bc_preview": (
+            "📣 <b>Check before sending</b>\n"
+            "<blockquote>The message above goes to <b>{n}</b> users.</blockquote>"
+        ),
+        "btn_bc_send": "📤 Send",
+        "bc_progress": "📤 <b>Sending…</b>\n\n{done} / {total}\n✅ {ok}  ❌ {failed}",
+        "btn_bc_stop": "⛔️ Stop",
+        "bc_stopped": "⛔️ Stopped.",
+        "btn_adm_settings": "⚙️ Bot settings",
+        "bot_settings_title": (
+            "⚙️ <b>Bot settings</b>\n\n"
+            "Tap to turn on or off. Applies immediately.\n"
+            "<blockquote>These override whatever config.py says.</blockquote>"
+        ),
+        "set_reply_btn": "Reply button",
+        "set_block_btn": "Block button",
+        "set_image_btn": "Make-an-image button",
+        "set_delete_btn": "Delete button",
+        "set_auto_image": "Send the image automatically",
+        "set_colors": "Coloured buttons",
+        "set_report_btn": "Report button",
+        "btn_adm_backup": "💾 Backup",
+        "backup_caption": "💾 Database backup — {date}\n👥 {users} users · 💬 {messages} messages",
+        "backup_failed": "⚠️ Backup failed: {error}",
+        "btn_adm_daily": "📈 Daily",
+        "daily_title": (
+            "📈 <b>Last {days} days</b>\n"
+            "<blockquote>👥 new · 💬 messages · 👀 link opens</blockquote>\n"
+            "<pre>{chart}</pre>"
+        ),
+        "btn_daily_7": "📈 7 days",
+        "btn_daily_30": "📈 30 days",
         "admin_only": "⛔️ Admins only.",
         "admin_stats": (
             "📊 <b>Global statistics</b>\n\n"

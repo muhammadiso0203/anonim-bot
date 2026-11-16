@@ -121,15 +121,43 @@ o'tishlari" ga qo'shilmaydi.
 
 | Tugma | Vazifasi |
 |---|---|
-| 📊 Statistika | Foydalanuvchilar, xabarlar, havola o'tishlari, bloklar |
-| 👥 Foydalanuvchilar | To'liq ro'yxat: ism, username, ID, qo'shilgan sana, qabul qilgan va yuborgan xabarlari soni. 10 tadan sahifalanadi, **📤 Ro'yxatni yuklab olish** tugmasi CSV qilib beradi (Excel'da ochiladi) |
-| 📣 Xabar yuborish | Barcha foydalanuvchilarga xabar (broadcast) |
-| 👮 Adminlar | Ro'yxat, ➕ qo'shish (ID yoki forward orqali), ❌ o'chirish |
-| 😀 Emojilar | Bot matnlaridagi emojilarni almashtirish |
-| 🔄 Yangilash / ❌ Yopish | |
+| 📊 Statistika | Foydalanuvchilar, xabarlar, havola o'tishlari, banlar, kanallar |
+| 📈 Kunlik | Oxirgi 7 yoki 30 kun: har kuni nechta yangi odam, xabar, havola o'tishi |
+| 👥 Foydalanuvchilar | To'liq ro'yxat (ism, ID, xabarlari, sana), 10 tadan sahifalanadi + CSV |
+| 🚫 Banlanganlar | Butun botdan chiqarilganlar, bosib banni olasiz |
+| 📣 Xabar yuborish | Kimga yuborishni tanlash → ko'rib chiqish → jonli hisoblagich → to'xtatish |
+| 📢 Kanallar | Majburiy obuna kanallari: qo'shish (forward yoki @nom) va o'chirish |
+| 👮 Adminlar | Ro'yxat, ➕ qo'shish (ID yoki forward), ❌ o'chirish |
+| 😀 Emojilar | Bot matnlaridagi 51 ta emojini almashtirish (premium emoji ham) |
+| ⚙️ Bot sozlamalari | Tugmalarni yoqish/o'chirish — serverga kirmasdan |
+| 💾 Zaxira nusxa | Bazani Telegramga fayl qilib yuboradi |
 
-`.env` dagi `ADMINS` — asosiy adminlar, ular 🔒 bilan belgilanadi va paneldan
-o'chirilmaydi. Panel orqali qo'shilganlar bazada saqlanadi.
+`.env` dagi `ADMINS` — asosiy adminlar, 🔒 bilan belgilanadi va paneldan
+o'chirilmaydi. Adminlar ban va majburiy obuna tekshiruvidan ozod.
+
+### Majburiy obuna
+
+`/admin` → **📢 Kanallar** → **➕ Kanal qo'shish** → kanaldan post forward qiling
+yoki `@nomini` yuboring.
+
+- **Bot o'sha kanalda admin bo'lishi shart** — aks holda a'zolikni tekshira olmaydi.
+  Bot admin bo'lmasa, o'sha kanal tekshiruvdan o'tkazib yuboriladi (foydalanuvchi
+  bekorga bloklanib qolmaydi).
+- Ro'yxat bo'sh bo'lsa — majburiy obuna umuman ishlamaydi.
+- A'zolik natijasi 5 daqiqa eslab qolinadi, shuning uchun har bir xabarda
+  Telegram'ga so'rov ketmaydi.
+
+### Shikoyat va ban
+
+Kelgan anonim xabar ostida **⚠️ Shikoyat** tugmasi bor. Bosilsa xabar matni
+adminlarga tushadi va ular **🚫 Banlash** tugmasi bilan muallifni butun botdan
+chiqarib yuboradi — u boshqa hech kimga anonim yoza olmaydi.
+
+> Shikoyatda muallifning kim ekani **ko'rsatilmaydi** — admin faqat xabar
+> mazmunini ko'radi va shu asosda qaror qabul qiladi. Anonimlik admindan ham
+> saqlanadi.
+
+Bir xabar uchun shikoyat faqat bir marta yuboriladi. Ban olish: **🚫 Banlanganlar**.
 
 ### Emojilarni almashtirish (premium emoji bilan)
 

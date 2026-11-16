@@ -3,13 +3,21 @@ from __future__ import annotations
 
 from typing import Any
 
-from aiogram import Bot, F, Router
+from aiogram import Bot, F, Router, html
 from aiogram.fsm.context import FSMContext
 from aiogram.types import BufferedInputFile, CallbackQuery, Message
 
 from app import database as db
 from app.imagecard import render_card
-from app.keyboards import CancelCB, MsgCB, cancel_kb, cancel_send_kb, sent_kb, share_kb
+from app.keyboards import (
+    CancelCB,
+    MsgCB,
+    cancel_kb,
+    cancel_send_kb,
+    report_kb,
+    sent_kb,
+    share_kb,
+)
 from app.locales import t
 from app.states import AnonReply, AnonSend
 from app.utils import (
@@ -243,6 +251,41 @@ async def cb_delete(
     await _delete_pair(bot, call.from_user.id, row)
     await db.delete_message(int(row["id"]))
     await call.answer(t(lang, "deleted_ok"))
+
+
+@router.callback_query(MsgCB.filter(F.action == "report"))
+async def cb_report(
+    call: CallbackQuery, callback_data: MsgCB, lang: str, bot: Bot
+) -> None:
+    row = await db.get_message(callback_data.mid)
+    if row is None or int(row["receiver_id"]) != call.from_user.id:
+        await call.answer(t(lang, "msg_not_found"), show_alert=True)
+        return
+    if not await db.mark_reported(int(row["id"])):
+        await call.answer(t(lang, "report_already"), show_alert=True)
+        return
+
+    body = (row["body"] or "").strip() or f"[{row['content']}]"
+    for admin_id in await db.all_admin_ids():
+        admin = await db.get_user(admin_id)
+        alang = admin["lang"] if admin else None
+        try:
+            await bot.send_message(
+                admin_id,
+                t(alang, "admin_report", text=html.quote(body[:600])),
+                reply_markup=report_kb(alang, int(row["id"])),
+            )
+            # Matnsiz xabar bo'lsa — asl nusxasini ham yuboramiz
+            if not row["body"] and row["dest_msg_id"]:
+                await bot.copy_message(
+                    chat_id=admin_id,
+                    from_chat_id=int(row["receiver_id"]),
+                    message_id=int(row["dest_msg_id"]),
+                )
+        except Exception:  # noqa: BLE001
+            pass
+
+    await call.answer(t(lang, "report_sent"), show_alert=True)
 
 
 @router.callback_query(MsgCB.filter(F.action == "block"))

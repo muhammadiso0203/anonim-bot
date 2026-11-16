@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS users (
     lang_chosen    INTEGER NOT NULL DEFAULT 0,
     accepting      INTEGER NOT NULL DEFAULT 1,
     stopped_bot    INTEGER NOT NULL DEFAULT 0,
+    banned         INTEGER NOT NULL DEFAULT 0,
+    ban_reason     TEXT,
     created_at     TEXT    NOT NULL,
     last_active    TEXT    NOT NULL
 );
@@ -36,6 +38,7 @@ CREATE TABLE IF NOT EXISTS messages (
     kind        TEXT    NOT NULL DEFAULT 'anon',
     content     TEXT    NOT NULL DEFAULT 'text',
     body         TEXT,
+    reported     INTEGER NOT NULL DEFAULT 0,
     dest_msg_id  INTEGER,
     dest_msg_id2 INTEGER,
     created_at  TEXT    NOT NULL
@@ -43,6 +46,15 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE INDEX IF NOT EXISTS idx_msg_receiver ON messages(receiver_id);
 CREATE INDEX IF NOT EXISTS idx_msg_sender   ON messages(sender_id);
 CREATE INDEX IF NOT EXISTS idx_msg_dest     ON messages(receiver_id, dest_msg_id);
+
+CREATE TABLE IF NOT EXISTS channels (
+    chat_id     INTEGER PRIMARY KEY,
+    title       TEXT,
+    username    TEXT,
+    invite_link TEXT,
+    added_by    INTEGER,
+    created_at  TEXT NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS settings (
     key   TEXT PRIMARY KEY,
@@ -101,6 +113,10 @@ async def _migrate() -> None:
         await db().execute("ALTER TABLE messages ADD COLUMN dest_msg_id2 INTEGER")
     if "body" not in cols:
         await db().execute("ALTER TABLE messages ADD COLUMN body TEXT")
+    if "reported" not in cols:
+        await db().execute(
+            "ALTER TABLE messages ADD COLUMN reported INTEGER NOT NULL DEFAULT 0"
+        )
 
     cur = await db().execute("PRAGMA table_info(users)")
     cols = {row["name"] for row in await cur.fetchall()}
@@ -108,6 +124,12 @@ async def _migrate() -> None:
         await db().execute(
             "ALTER TABLE users ADD COLUMN lang_chosen INTEGER NOT NULL DEFAULT 0"
         )
+    if "banned" not in cols:
+        await db().execute(
+            "ALTER TABLE users ADD COLUMN banned INTEGER NOT NULL DEFAULT 0"
+        )
+    if "ban_reason" not in cols:
+        await db().execute("ALTER TABLE users ADD COLUMN ban_reason TEXT")
     await db().commit()
 
 
@@ -321,6 +343,137 @@ async def blocked_list(owner_id: int) -> list[aiosqlite.Row]:
     return list(await cur.fetchall())
 
 
+async def mark_reported(message_row_id: int) -> bool:
+    """Shikoyat qilingan deb belgilaydi. Avval qilingan bo'lsa — False."""
+    cur = await db().execute(
+        "SELECT reported FROM messages WHERE id = ?", (message_row_id,)
+    )
+    row = await cur.fetchone()
+    if row is None or row["reported"]:
+        return False
+    await db().execute(
+        "UPDATE messages SET reported = 1 WHERE id = ?", (message_row_id,)
+    )
+    await db().commit()
+    return True
+
+
+# ------------------------------------------------- broadcast qabul qiluvchilar
+
+async def broadcast_targets(kind: int) -> list[int]:
+    """0 — hammaga, 1 — faollarga (botni to'xtatmaganlarga), 2 — xabar olganlarga."""
+    if kind == 2:
+        sql = (
+            "SELECT DISTINCT u.user_id FROM users u"
+            " JOIN messages m ON m.receiver_id = u.user_id"
+            " WHERE u.stopped_bot = 0 AND u.banned = 0"
+        )
+    elif kind == 1:
+        sql = "SELECT user_id FROM users WHERE stopped_bot = 0 AND banned = 0"
+    else:
+        sql = "SELECT user_id FROM users WHERE banned = 0"
+    cur = await db().execute(sql)
+    return [int(r["user_id"]) for r in await cur.fetchall()]
+
+
+async def broadcast_counts() -> dict[str, int]:
+    return {
+        "all": len(await broadcast_targets(0)),
+        "active": len(await broadcast_targets(1)),
+        "got": len(await broadcast_targets(2)),
+    }
+
+
+# ----------------------------------------------- butun botdan banlash
+
+async def ban_user(user_id: int, reason: Optional[str] = None) -> None:
+    await db().execute(
+        "UPDATE users SET banned = 1, ban_reason = ? WHERE user_id = ?",
+        (reason, user_id),
+    )
+    await db().commit()
+
+
+async def unban_user(user_id: int) -> None:
+    await db().execute(
+        "UPDATE users SET banned = 0, ban_reason = NULL WHERE user_id = ?", (user_id,)
+    )
+    await db().commit()
+
+
+async def is_banned(user_id: int) -> bool:
+    cur = await db().execute(
+        "SELECT 1 FROM users WHERE user_id = ? AND banned = 1", (user_id,)
+    )
+    return await cur.fetchone() is not None
+
+
+async def banned_rows() -> list:
+    cur = await db().execute(
+        "SELECT user_id, username, first_name, ban_reason FROM users"
+        " WHERE banned = 1 ORDER BY user_id"
+    )
+    return list(await cur.fetchall())
+
+
+# ------------------------------------------------- majburiy obuna kanallari
+
+async def add_channel(
+    chat_id: int,
+    title: Optional[str],
+    username: Optional[str],
+    invite_link: Optional[str],
+    added_by: Optional[int],
+) -> None:
+    await db().execute(
+        "INSERT INTO channels (chat_id, title, username, invite_link, added_by,"
+        " created_at) VALUES (?, ?, ?, ?, ?, ?)"
+        " ON CONFLICT(chat_id) DO UPDATE SET title = excluded.title,"
+        " username = excluded.username, invite_link = excluded.invite_link",
+        (chat_id, title, username, invite_link, added_by, _now()),
+    )
+    await db().commit()
+
+
+async def remove_channel(chat_id: int) -> None:
+    await db().execute("DELETE FROM channels WHERE chat_id = ?", (chat_id,))
+    await db().commit()
+
+
+async def channels() -> list:
+    cur = await db().execute("SELECT * FROM channels ORDER BY created_at")
+    return list(await cur.fetchall())
+
+
+async def channels_count() -> int:
+    return await _scalar("SELECT COUNT(*) FROM channels")
+
+
+# ------------------------------------------------- kunlik statistika
+
+async def daily_stats(days: int = 7) -> list[dict]:
+    """Oxirgi N kun: sana, yangi foydalanuvchilar, xabarlar, havola o'tishlari."""
+    from datetime import timedelta
+
+    today = datetime.now(timezone.utc).date()
+    out = []
+    for back in range(days - 1, -1, -1):
+        day = (today - timedelta(days=back)).strftime("%Y-%m-%d")
+        out.append({
+            "date": day,
+            "users": await _scalar(
+                "SELECT COUNT(*) FROM users WHERE substr(created_at, 1, 10) = ?", (day,)
+            ),
+            "messages": await _scalar(
+                "SELECT COUNT(*) FROM messages WHERE substr(created_at, 1, 10) = ?", (day,)
+            ),
+            "views": await _scalar(
+                "SELECT COUNT(*) FROM link_views WHERE substr(created_at, 1, 10) = ?", (day,)
+            ),
+        })
+    return out
+
+
 # ------------------------------------------------- foydalanuvchilar ro'yxati
 
 _USER_LIST_SQL = (
@@ -474,6 +627,8 @@ async def global_stats() -> dict[str, int]:
         ),
         "blocks": await _scalar("SELECT COUNT(*) FROM blocks"),
         "views": await _scalar("SELECT COUNT(*) FROM link_views"),
+        "banned": await _scalar("SELECT COUNT(*) FROM users WHERE banned = 1"),
+        "channels": await _scalar("SELECT COUNT(*) FROM channels"),
     }
 
 

@@ -18,6 +18,7 @@ from app import database as db
 from app.handlers.anon import start_anon_session
 from app.keyboards import (
     LangCB,
+    SubCB,
     NavCB,
     ToggleCB,
     UnblockCB,
@@ -32,7 +33,7 @@ from app.keyboards import (
 )
 from app.locales import COMMANDS, LANG_NAMES, t
 from app.states import Issue
-from app.utils import user_link
+from app.utils import missing_channels, user_link
 
 router = Router(name="menu")
 
@@ -200,6 +201,24 @@ async def cmd_cancel(message: Message, state: FSMContext, lang: str) -> None:
         return
     await state.clear()
     await message.answer(t(lang, "cancelled"))
+
+
+# ------------------------------------------------- majburiy obunani tekshirish
+
+@router.callback_query(SubCB.filter())
+async def cb_sub_check(call: CallbackQuery, lang: str, user, bot: Bot) -> None:
+    if await missing_channels(bot, call.from_user.id):
+        await call.answer(t(lang, "sub_fail"), show_alert=True)
+        return
+
+    await call.answer(t(lang, "sub_ok"))
+    if call.message is not None:
+        try:
+            await call.message.delete()
+        except Exception:  # noqa: BLE001
+            pass
+    text, markup = await _start_view(user, lang)
+    await bot.send_message(call.from_user.id, text, reply_markup=markup)
 
 
 # ------------------------------------------------------------ navigatsiya

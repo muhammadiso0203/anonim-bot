@@ -20,10 +20,10 @@ from aiogram.exceptions import TelegramNetworkError, TelegramUnauthorizedError
 from aiogram.types import BotCommand, BotCommandScopeAllPrivateChats, ErrorEvent
 
 import config
-from app import database as db, emoji_pack
+from app import database as db, emoji_pack, settings
 from app.handlers import admin, anon, menu
 from app.locales import COMMANDS
-from app.middlewares import ThrottleMiddleware, UserMiddleware
+from app.middlewares import GateMiddleware, ThrottleMiddleware, UserMiddleware
 from app.utils import set_bot_username
 
 log = logging.getLogger("anonbot")
@@ -83,6 +83,11 @@ def build_dispatcher() -> Dispatcher:
     dp.message.outer_middleware(ThrottleMiddleware())
     dp.callback_query.outer_middleware(ThrottleMiddleware())
 
+    # Ban va majburiy obuna — throttle'dan keyin, handlerlardan oldin
+    gate = GateMiddleware()
+    dp.message.outer_middleware(gate)
+    dp.callback_query.outer_middleware(gate)
+
     # Router'lar: tartib muhim — admin, keyin menyu (buyruqlar), keyin anonim
     dp.include_router(admin.router)
     dp.include_router(menu.router)
@@ -108,6 +113,7 @@ async def main() -> None:
 
     await db.init_db(config.DB_PATH)
     await emoji_pack.load()
+    await settings.load()
 
     bot = Bot(
         token=config.BOT_TOKEN,

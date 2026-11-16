@@ -39,6 +39,7 @@ EDITABLE: tuple[tuple[str, str], ...] = (
     ("❓", "Yordam"),
     ("👤", "Foydalanuvchi"),
     ("⚠️", "Ogohlantirish"),
+    ("ℹ️", "Ma'lumot"),
     ("👇", "Pastga ishora"),
     ("☝️", "Yuqoriga ishora"),
     ("👉", "O'ngga ishora"),
@@ -54,15 +55,18 @@ EDITABLE: tuple[tuple[str, str], ...] = (
     ("👮", "Adminlar"),
     ("👥", "Foydalanuvchilar"),
     ("📣", "Xabar yuborish"),
+    ("📢", "Majburiy obuna"),
     ("➕", "Qo'shish"),
     ("🔒", "Asosiy admin"),
     ("😀", "Emojilar"),
     ("🔄", "Yangilash"),
-    ("⛔️", "Ruxsat yo'q"),
+    ("⛔️", "To'xtatish"),
     ("🆕", "Yangi"),
     ("📅", "Sana"),
     ("⏳", "Kutish"),
     ("📤", "Yuborildi"),
+    ("💾", "Zaxira nusxa"),
+    ("📈", "Kunlik statistika"),
 )
 
 EDITABLE_MAP = dict(EDITABLE)

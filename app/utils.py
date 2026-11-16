@@ -14,7 +14,7 @@ from aiogram.exceptions import (
 from aiogram.types import BufferedInputFile, Message
 
 import config
-from app import database as db, emoji_pack
+from app import database as db, emoji_pack, settings
 from app.imagecard import render_card
 from app.keyboards import incoming_kb
 from app.locales import t
@@ -201,6 +201,30 @@ async def _send_card(bot: Bot, chat_id: int, text: str) -> Optional[int]:
         return None
 
 
+#: Kanalda «a'zo» hisoblanadigan holatlar
+MEMBER_STATUSES = ("creator", "administrator", "member", "restricted")
+
+
+async def channel_member(bot: Bot, chat_id: int, user_id: int) -> bool:
+    """Bot kanalga kira olmasa — foydalanuvchini aybdor qilmaymiz (True)."""
+    try:
+        member = await bot.get_chat_member(chat_id, user_id)
+        return member.status in MEMBER_STATUSES
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Kanal (%s) tekshirilmadi: %s", chat_id, exc)
+        return True
+
+
+async def missing_channels(bot: Bot, user_id: int) -> list:
+    """Foydalanuvchi a'zo bo'lmagan kanallar ro'yxati."""
+    rows = await db.channels()
+    missing = []
+    for row in rows:
+        if not await channel_member(bot, int(row["chat_id"]), user_id):
+            missing.append(row)
+    return missing
+
+
 async def relay_message(
     bot: Bot,
     message: Message,
@@ -283,7 +307,7 @@ async def relay_message(
         remember_album(message, sender_id, receiver_id, kind, parent_id)
 
         if mid is not None:
-            if config.AUTO_IMAGE_CARD and kind == "anon" and message.text and dest_id2 is None:
+            if settings.get("AUTO_IMAGE_CARD") and kind == "anon" and message.text and dest_id2 is None:
                 dest_id2 = await _send_card(bot, receiver_id, message.text)
             await db.set_dest_msg_id(mid, dest_id, dest_id2)
 

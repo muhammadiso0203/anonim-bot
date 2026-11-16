@@ -27,6 +27,11 @@ class AdminAdd(StatesGroup):
     writing = State()
 
 
+class AdminChannel(StatesGroup):
+    """Majburiy obuna uchun kanal kutilyapti."""
+    writing = State()
+
+
 class EmojiSet(StatesGroup):
     """Yangi emoji kutilyapti."""
     waiting = State()

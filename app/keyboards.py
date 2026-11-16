@@ -12,8 +12,7 @@ from aiogram.filters.callback_data import CallbackData
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-import config
-from app import emoji_pack
+from app import emoji_pack, settings
 from app.locales import LANG_NAMES, label
 
 #: Eski aiogram versiyalarida bu maydonlar bo'lmasligi mumkin
@@ -68,7 +67,7 @@ class EmojiCB(CallbackData, prefix="emj"):
 
 def _style(style: str | None) -> dict:
     """Rang qo'llab-quvvatlansa — {'style': ...}, aks holda bo'sh."""
-    if style and SUPPORTS_STYLE and config.BUTTON_COLORS:
+    if style and SUPPORTS_STYLE and settings.get("BUTTON_COLORS"):
         return {"style": style}
     return {}
 
@@ -81,7 +80,7 @@ def _b(raw: str, *, style: str | None = BLUE, **kwargs) -> InlineKeyboardButton:
         extra["icon_custom_emoji_id"] = icon
     else:
         text = emoji_pack.for_button(raw)
-    if style and SUPPORTS_STYLE and config.BUTTON_COLORS:
+    if style and SUPPORTS_STYLE and settings.get("BUTTON_COLORS"):
         extra["style"] = style
     return InlineKeyboardButton(text=text, **extra, **kwargs)
 
@@ -105,14 +104,14 @@ def share_kb(lang: str, link: str, extra: bool = True) -> InlineKeyboardMarkup:
 
 
 def incoming_kb(lang: str, mid: int, can_block: bool = True) -> InlineKeyboardMarkup:
-    """Kelgan anonim xabar ostidagi tugmalar (config.py dan boshqariladi)."""
+    """Kelgan anonim xabar ostidagi tugmalar (admin paneldan boshqariladi)."""
     kb = InlineKeyboardBuilder()
     top = []
-    if config.SHOW_REPLY_BUTTON:
+    if settings.get("SHOW_REPLY_BUTTON"):
         top.append(
             _b(label(lang, "btn_reply"), style=GREEN, callback_data=MsgCB(action="reply", mid=mid).pack())
         )
-    if can_block and config.SHOW_BLOCK_BUTTON:
+    if can_block and settings.get("SHOW_BLOCK_BUTTON"):
         top.append(
             _b(label(lang, "btn_block"), style=RED, callback_data=MsgCB(action="block", mid=mid).pack())
         )
@@ -120,13 +119,17 @@ def incoming_kb(lang: str, mid: int, can_block: bool = True) -> InlineKeyboardMa
         kb.row(*top)
 
     bottom = []
-    if config.SHOW_IMAGE_BUTTON:
+    if settings.get("SHOW_IMAGE_BUTTON"):
         bottom.append(
             _b(label(lang, "btn_make_image"), callback_data=MsgCB(action="img", mid=mid).pack())
         )
-    if config.SHOW_DELETE_BUTTON:
+    if settings.get("SHOW_DELETE_BUTTON"):
         bottom.append(
             _b(label(lang, "btn_delete"), style=RED, callback_data=MsgCB(action="del", mid=mid).pack())
+        )
+    if can_block and settings.get("SHOW_REPORT_BUTTON"):
+        bottom.append(
+            _b(label(lang, "btn_report"), style=RED, callback_data=MsgCB(action="report", mid=mid).pack())
         )
     if bottom:
         kb.row(*bottom)
@@ -224,14 +227,23 @@ def admin_kb(lang: str) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.row(
         _b(label(lang, "btn_adm_stats"), callback_data=AdminCB(action="stats").pack()),
+        _b(label(lang, "btn_adm_daily"), callback_data=AdminCB(action="daily", arg=7).pack()),
+    )
+    kb.row(
         _b(label(lang, "btn_adm_users"), callback_data=AdminCB(action="users").pack()),
+        _b(label(lang, "btn_adm_banned"), style=RED, callback_data=AdminCB(action="banned").pack()),
     )
     kb.row(
         _b(label(lang, "btn_adm_broadcast"), callback_data=AdminCB(action="broadcast").pack()),
-        _b(label(lang, "btn_adm_admins"), callback_data=AdminCB(action="admins").pack()),
+        _b(label(lang, "btn_adm_channels"), callback_data=AdminCB(action="channels").pack()),
     )
     kb.row(
+        _b(label(lang, "btn_adm_admins"), callback_data=AdminCB(action="admins").pack()),
         _b(label(lang, "btn_adm_emoji"), callback_data=EmojiCB(action="back").pack()),
+    )
+    kb.row(
+        _b(label(lang, "btn_adm_settings"), callback_data=AdminCB(action="settings").pack()),
+        _b(label(lang, "btn_adm_backup"), style=GREEN, callback_data=AdminCB(action="backup").pack()),
     )
     kb.row(
         _b(label(lang, "btn_refresh"), callback_data=AdminCB(action="home").pack()),
@@ -327,4 +339,138 @@ def emoji_item_kb(lang: str, idx: int) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.row(_b(label(lang, "btn_emoji_reset"), style=RED, callback_data=EmojiCB(action="reset", idx=idx).pack()))
     kb.row(_b(label(lang, "btn_back"), callback_data=EmojiCB(action="back").pack()))
+    return kb.as_markup()
+
+
+# ------------------------------------------------------- majburiy obuna
+
+class SubCB(CallbackData, prefix="sub"):
+    action: str          # check
+
+
+def sub_kb(lang: str, rows: list) -> InlineKeyboardMarkup:
+    """Obuna bo'lish kerak bo'lgan kanallar + tekshirish tugmasi."""
+    kb = InlineKeyboardBuilder()
+    for row in rows:
+        link = row["invite_link"] or (
+            f"https://t.me/{row['username']}" if row["username"] else None
+        )
+        if not link:
+            continue
+        kb.row(
+            InlineKeyboardButton(
+                text="📢 " + (row["title"] or row["username"] or "Kanal"),
+                url=link,
+                **_style(BLUE),
+            )
+        )
+    kb.row(
+        _b(label(lang, "btn_sub_check"), style=GREEN,
+           callback_data=SubCB(action="check").pack())
+    )
+    return kb.as_markup()
+
+
+# ------------------------------------------------------- admin: kanallar
+
+def channels_kb(lang: str, rows: list) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    for row in rows:
+        title = row["title"] or row["username"] or str(row["chat_id"])
+        kb.row(
+            _b(f"❌ {title}", style=RED,
+               callback_data=AdminCB(action="ch_rm", arg=row["chat_id"]).pack())
+        )
+    kb.row(
+        _b(label(lang, "btn_adm_channel_add"), style=GREEN,
+           callback_data=AdminCB(action="ch_add").pack())
+    )
+    kb.row(_b(label(lang, "btn_back"), callback_data=AdminCB(action="home").pack()))
+    return kb.as_markup()
+
+
+# --------------------------------------------------- admin: banlanganlar
+
+def banned_kb(lang: str, rows: list) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    for row in rows:
+        name = row["first_name"] or row["username"] or str(row["user_id"])
+        kb.row(
+            _b(f"✅ {name} ({row['user_id']})", style=GREEN,
+               callback_data=AdminCB(action="unban", arg=row["user_id"]).pack())
+        )
+    kb.row(_b(label(lang, "btn_back"), callback_data=AdminCB(action="home").pack()))
+    return kb.as_markup()
+
+
+def report_kb(lang: str, mid: int) -> InlineKeyboardMarkup:
+    """Adminga kelgan shikoyat ostidagi tugmalar."""
+    kb = InlineKeyboardBuilder()
+    kb.row(
+        _b(label(lang, "btn_ban"), style=RED,
+           callback_data=AdminCB(action="rban", arg=mid).pack()),
+        _b(label(lang, "btn_ignore"), style=GREEN,
+           callback_data=AdminCB(action="rskip", arg=mid).pack()),
+    )
+    return kb.as_markup()
+
+
+# ------------------------------------------------------ admin: broadcast
+
+def bc_target_kb(lang: str, counts: dict) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.row(_b(label(lang, "btn_bc_all", n=counts["all"]),
+              callback_data=AdminCB(action="bc_pick", arg=0).pack()))
+    kb.row(_b(label(lang, "btn_bc_active", n=counts["active"]),
+              callback_data=AdminCB(action="bc_pick", arg=1).pack()))
+    kb.row(_b(label(lang, "btn_bc_got", n=counts["got"]),
+              callback_data=AdminCB(action="bc_pick", arg=2).pack()))
+    kb.row(_b(label(lang, "btn_back"), callback_data=AdminCB(action="home").pack()))
+    return kb.as_markup()
+
+
+def bc_preview_kb(lang: str) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.row(
+        _b(label(lang, "btn_bc_send"), style=GREEN,
+           callback_data=AdminCB(action="bc_send").pack()),
+        _b(label(lang, "btn_cancel"), style=RED,
+           callback_data=AdminCB(action="home").pack()),
+    )
+    return kb.as_markup()
+
+
+def bc_stop_kb(lang: str) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.row(_b(label(lang, "btn_bc_stop"), style=RED,
+              callback_data=AdminCB(action="bc_stop").pack()))
+    return kb.as_markup()
+
+
+# ------------------------------------------------- admin: bot sozlamalari
+
+def bot_settings_kb(lang: str) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    for idx, (name, key) in enumerate(settings.TOGGLES):
+        on = settings.get(name)
+        kb.row(
+            _b(("✅ " if on else "❌ ") + label(lang, key),
+               style=GREEN if on else RED,
+               callback_data=AdminCB(action="set", arg=idx).pack())
+        )
+    kb.row(_b(label(lang, "btn_back"), callback_data=AdminCB(action="home").pack()))
+    return kb.as_markup()
+
+
+# ------------------------------------------------ admin: kunlik statistika
+
+def daily_kb(lang: str, days: int) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.row(
+        _b(label(lang, "btn_daily_7"), style=GREEN if days == 7 else BLUE,
+           callback_data=AdminCB(action="daily", arg=7).pack()),
+        _b(label(lang, "btn_daily_30"), style=GREEN if days == 30 else BLUE,
+           callback_data=AdminCB(action="daily", arg=30).pack()),
+    )
+    kb.row(_b(label(lang, "btn_back"), callback_data=AdminCB(action="home").pack()))
     return kb.as_markup()

@@ -55,6 +55,7 @@ SHOW_IMAGE_BUTTON: bool = True     # 🖼 Rasm qilish
 SHOW_REPLY_BUTTON: bool = False    # ✍️ Javob berish (tugmasiz ham: xabarni surib javob yoziladi)
 SHOW_BLOCK_BUTTON: bool = False    # 🚫 Bloklash (tugmasiz: xabarni surib /block deb yoziladi)
 SHOW_DELETE_BUTTON: bool = False   # 🗑 Xabarni o'chirish (qabul qiluvchida)
+SHOW_REPORT_BUTTON: bool = True     # ⚠️ Shikoyat (adminlarga)
 
 
 PLACEHOLDER_TOKEN = "123456789:AAE"

@@ -5,7 +5,11 @@ import asyncio
 import csv
 import io
 import logging
-from typing import Optional
+import os
+import sqlite3
+import tempfile
+from datetime import datetime, timezone
+from typing import Any, Optional
 
 from aiogram import Bot, Router, html
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramRetryAfter
@@ -20,21 +24,31 @@ from aiogram.types import (
 )
 
 import config
-from app import database as db, emoji_pack
+from app import database as db, emoji_pack, settings as bot_settings
 from app.keyboards import (
     AdminCB,
     EmojiCB,
     admin_back_kb,
     admin_kb,
     admins_kb,
+    banned_kb,
+    bc_preview_kb,
+    bc_stop_kb,
+    bc_target_kb,
+    bot_settings_kb,
+    channels_kb,
+    daily_kb,
     emoji_item_kb,
     emoji_list_kb,
     users_kb,
 )
 from app.locales import t
-from app.states import AdminAdd, AdminBroadcast, EmojiSet
+from app.states import AdminAdd, AdminBroadcast, AdminChannel, EmojiSet
 
 log = logging.getLogger(__name__)
+
+#: Broadcast'ni to'xtatgan adminlar
+_bc_stop: set[int] = set()
 
 
 class IsAdmin(Filter):
@@ -139,6 +153,100 @@ def _emoji_view(lang: str) -> tuple[str, InlineKeyboardMarkup]:
     return t(lang, "emoji_title", preview=preview), emoji_list_kb(lang, items)
 
 
+async def _channels_view(lang: str) -> tuple[str, InlineKeyboardMarkup]:
+    rows = await db.channels()
+    if not rows:
+        return t(lang, "channels_empty"), channels_kb(lang, [])
+    return t(lang, "channels_title", count=len(rows)), channels_kb(lang, rows)
+
+
+async def _banned_view(lang: str) -> tuple[str, InlineKeyboardMarkup]:
+    rows = await db.banned_rows()
+    if not rows:
+        return t(lang, "banned_empty"), admin_back_kb(lang)
+    return t(lang, "banned_title", count=len(rows)), banned_kb(lang, rows)
+
+
+def _settings_view(lang: str) -> tuple[str, InlineKeyboardMarkup]:
+    return t(lang, "bot_settings_title"), bot_settings_kb(lang)
+
+
+async def _daily_view(lang: str, days: int) -> tuple[str, InlineKeyboardMarkup]:
+    days = 30 if days >= 30 else 7
+    rows = await db.daily_stats(days)
+    lines = [f"{'sana':<6}{'yangi':>6}{'xabar':>7}{'otish':>7}"]
+    for row in rows:
+        lines.append(
+            f"{row['date'][5:]:<6}{row['users']:>6}{row['messages']:>7}{row['views']:>7}"
+        )
+    lines.append(
+        f"{'jami':<6}{sum(r['users'] for r in rows):>6}"
+        f"{sum(r['messages'] for r in rows):>7}{sum(r['views'] for r in rows):>7}"
+    )
+    return t(lang, "daily_title", days=days, chart="\n".join(lines)), daily_kb(lang, days)
+
+
+def _make_backup() -> bytes:
+    """Bazaning xavfsiz nusxasi (bot ishlab turganda ham to'g'ri chiqadi)."""
+    fd, path = tempfile.mkstemp(suffix=".db")
+    os.close(fd)
+    try:
+        src = sqlite3.connect(f"file:{config.DB_PATH}?mode=ro", uri=True)
+        dst = sqlite3.connect(path)
+        try:
+            with dst:
+                src.backup(dst)
+        finally:
+            dst.close()
+            src.close()
+        with open(path, "rb") as fh:
+            return fh.read()
+    finally:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+
+
+async def _resolve_channel(bot: Bot, message: Message):
+    """Forward qilingan post yoki @nom bo'yicha kanalni topadi."""
+    chat = None
+    origin = getattr(message, "forward_origin", None)
+    if origin is not None:
+        chat = getattr(origin, "chat", None)
+    if chat is None:
+        chat = getattr(message, "forward_from_chat", None)
+
+    ident: Any = chat.id if chat is not None else None
+    if ident is None:
+        text = (message.text or "").strip()
+        if text.startswith("@") and len(text) > 1:
+            ident = text
+        elif text.lstrip("-").isdigit():
+            ident = int(text)
+    if ident is None:
+        return None, None
+
+    try:
+        full = await bot.get_chat(ident)
+        member = await bot.get_chat_member(full.id, bot.id)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Kanal topilmadi (%s): %s", ident, exc)
+        return "not_admin", None
+    if member.status not in ("administrator", "creator"):
+        return "not_admin", None
+
+    link = getattr(full, "invite_link", None)
+    if not link and full.username:
+        link = f"https://t.me/{full.username}"
+    if not link:
+        try:
+            link = await bot.export_chat_invite_link(full.id)
+        except Exception:  # noqa: BLE001
+            link = None
+    return full, link
+
+
 async def _safe_edit(call: CallbackQuery, text: str, markup: InlineKeyboardMarkup) -> None:
     if call.message is None:
         return
@@ -197,9 +305,97 @@ async def cb_admin(
         await call.answer()
         return
     elif action == "broadcast":
-        await state.set_state(AdminBroadcast.writing)
-        await _safe_edit(call, t(lang, "broadcast_prompt"), admin_back_kb(lang))
+        await state.clear()
+        counts = await db.broadcast_counts()
+        await _safe_edit(call, t(lang, "bc_target"), bc_target_kb(lang, counts))
         await call.answer()
+        return
+    elif action == "bc_pick":
+        await state.set_state(AdminBroadcast.writing)
+        await state.update_data(bc_target=callback_data.arg)
+        await _safe_edit(call, t(lang, "bc_ask"), admin_back_kb(lang))
+        await call.answer()
+        return
+    elif action == "bc_send":
+        await _run_broadcast(call, state, lang, bot)
+        return
+    elif action == "bc_stop":
+        _bc_stop.add(call.from_user.id)
+        await call.answer(t(lang, "bc_stopped"), show_alert=True)
+        return
+    elif action == "channels":
+        await state.clear()
+        text, markup = await _channels_view(lang)
+    elif action == "ch_add":
+        await state.set_state(AdminChannel.writing)
+        await _safe_edit(call, t(lang, "channel_add_prompt"), admin_back_kb(lang))
+        await call.answer()
+        return
+    elif action == "ch_rm":
+        await db.remove_channel(callback_data.arg)
+        await call.answer(t(lang, "channel_removed"))
+        text, markup = await _channels_view(lang)
+    elif action == "banned":
+        await state.clear()
+        text, markup = await _banned_view(lang)
+    elif action == "unban":
+        await db.unban_user(callback_data.arg)
+        await call.answer(t(lang, "unban_done"))
+        text, markup = await _banned_view(lang)
+    elif action == "rban":
+        row = await db.get_message(callback_data.arg)
+        if row is not None:
+            await db.ban_user(int(row["sender_id"]), reason="shikoyat")
+        await call.answer(t(lang, "ban_done"), show_alert=True)
+        if call.message is not None:
+            try:
+                await call.message.edit_reply_markup(reply_markup=None)
+            except Exception:  # noqa: BLE001
+                pass
+        return
+    elif action == "rskip":
+        await call.answer(t(lang, "report_closed"))
+        if call.message is not None:
+            try:
+                await call.message.edit_reply_markup(reply_markup=None)
+            except Exception:  # noqa: BLE001
+                pass
+        return
+    elif action == "settings":
+        await state.clear()
+        text, markup = _settings_view(lang)
+    elif action == "set":
+        toggles = bot_settings.TOGGLES
+        if 0 <= callback_data.arg < len(toggles):
+            await bot_settings.toggle(toggles[callback_data.arg][0])
+        text, markup = _settings_view(lang)
+    elif action == "daily":
+        await state.clear()
+        text, markup = await _daily_view(lang, callback_data.arg or 7)
+    elif action == "backup":
+        await call.answer()
+        try:
+            data_bytes = await asyncio.to_thread(_make_backup)
+            stats = await db.global_stats()
+            await bot.send_document(
+                call.from_user.id,
+                BufferedInputFile(
+                    data_bytes,
+                    filename=f"anonbot-{datetime.now(timezone.utc):%Y%m%d-%H%M}.db",
+                ),
+                caption=t(
+                    lang,
+                    "backup_caption",
+                    date=f"{datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC",
+                    users=stats["users"],
+                    messages=stats["messages"],
+                ),
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.exception("Zaxira olinmadi")
+            await bot.send_message(
+                call.from_user.id, t(lang, "backup_failed", error=str(exc)[:200])
+            )
         return
     elif action == "add":
         await state.set_state(AdminAdd.writing)
@@ -386,28 +582,55 @@ async def on_emoji_set(message: Message, state: FSMContext, lang: str, bot: Bot)
 # ----------------------------------------------------------------- broadcast
 
 @router.message(AdminBroadcast.writing)
-async def do_broadcast(message: Message, state: FSMContext, lang: str, bot: Bot) -> None:
+async def bc_collect(message: Message, state: FSMContext, lang: str) -> None:
+    """Yuboriladigan xabar olindi — endi ko'rib chiqish."""
     if (message.text or "").strip() in ("/cancel", "/stop", "/admin"):
         await state.clear()
         await message.answer(t(lang, "cancelled"))
         return
 
+    data = await state.get_data()
+    target = int(data.get("bc_target", 0))
+    await state.update_data(bc_chat=message.chat.id, bc_msg=message.message_id)
+    count = len(await db.broadcast_targets(target))
+    await message.answer(t(lang, "bc_preview", n=count), reply_markup=bc_preview_kb(lang))
+
+
+async def _run_broadcast(
+    call: CallbackQuery, state: FSMContext, lang: str, bot: Bot
+) -> None:
+    data = await state.get_data()
+    chat_id = data.get("bc_chat")
+    msg_id = data.get("bc_msg")
+    target = int(data.get("bc_target", 0))
     await state.clear()
-    await message.answer(t(lang, "broadcast_started"))
+    if not chat_id or not msg_id:
+        await call.answer(t(lang, "msg_not_found"), show_alert=True)
+        return
+
+    await call.answer()
+    admin_id = call.from_user.id
+    _bc_stop.discard(admin_id)
+    targets = await db.broadcast_targets(target)
+    total = len(targets)
+
+    progress = await bot.send_message(
+        admin_id,
+        t(lang, "bc_progress", done=0, total=total, ok=0, failed=0),
+        reply_markup=bc_stop_kb(lang),
+    )
 
     ok = failed = 0
-    for uid in await db.all_user_ids():
+    for done, uid in enumerate(targets, start=1):
+        if admin_id in _bc_stop:
+            break
         try:
-            await bot.copy_message(
-                chat_id=uid, from_chat_id=message.chat.id, message_id=message.message_id
-            )
+            await bot.copy_message(chat_id=uid, from_chat_id=chat_id, message_id=msg_id)
             ok += 1
         except TelegramRetryAfter as exc:
             await asyncio.sleep(exc.retry_after + 1)
             try:
-                await bot.copy_message(
-                    chat_id=uid, from_chat_id=message.chat.id, message_id=message.message_id
-                )
+                await bot.copy_message(chat_id=uid, from_chat_id=chat_id, message_id=msg_id)
                 ok += 1
             except Exception:  # noqa: BLE001
                 failed += 1
@@ -417,8 +640,54 @@ async def do_broadcast(message: Message, state: FSMContext, lang: str, bot: Bot)
         except Exception as exc:  # noqa: BLE001
             log.warning("Broadcast xatosi (%s): %s", uid, exc)
             failed += 1
+
+        if done % 25 == 0:
+            try:
+                await progress.edit_text(
+                    t(lang, "bc_progress", done=done, total=total, ok=ok, failed=failed),
+                    reply_markup=bc_stop_kb(lang),
+                )
+            except Exception:  # noqa: BLE001
+                pass
         await asyncio.sleep(0.05)
 
-    await message.answer(t(lang, "broadcast_done", ok=ok, failed=failed))
+    _bc_stop.discard(admin_id)
+    try:
+        await progress.edit_text(t(lang, "broadcast_done", ok=ok, failed=failed))
+    except Exception:  # noqa: BLE001
+        await bot.send_message(admin_id, t(lang, "broadcast_done", ok=ok, failed=failed))
+
     text, markup = await _home_view(lang)
+    await bot.send_message(admin_id, text, reply_markup=markup)
+
+
+# ------------------------------------------------------- kanal qo'shish
+
+@router.message(AdminChannel.writing)
+async def on_channel_add(
+    message: Message, state: FSMContext, lang: str, bot: Bot
+) -> None:
+    if (message.text or "").strip() in ("/cancel", "/admin"):
+        await state.clear()
+        await message.answer(t(lang, "cancelled"))
+        return
+
+    chat, link = await _resolve_channel(bot, message)
+    if chat is None:
+        await message.answer(t(lang, "channel_bad"))
+        return
+    if chat == "not_admin":
+        await message.answer(t(lang, "channel_not_admin"))
+        return
+
+    await state.clear()
+    await db.add_channel(
+        chat_id=chat.id,
+        title=chat.title,
+        username=chat.username,
+        invite_link=link,
+        added_by=message.from_user.id,
+    )
+    await message.answer(t(lang, "channel_added", title=html.quote(chat.title or "")))
+    text, markup = await _channels_view(lang)
     await message.answer(text, reply_markup=markup)
