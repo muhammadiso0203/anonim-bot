@@ -56,6 +56,14 @@ python bot.py
    anonim muallifga ketadi, u ham xuddi shunday surib javob bera oladi.
    Shunday qilib ikki tomon ham anonim suhbatlashadi.
 
+**Muhim:** bitta havola bosilishi = **bitta xabar**. Xabar yuborilgandan keyin
+suhbat yopiladi va foydalanuvchiga o'zining havolasi ko'rsatiladi. Shundan
+keyin yozilgan oddiy xabarlar havola egasiga **ketmaydi** — ular shunchaki
+foydalanuvchining o'z havolasini qaytaradi. Yana yozish uchun
+**✍️ Yana xabar yuborish** tugmasi bor (yoki havolani qayta bosish).
+Albom (bir nechta rasm birga) yuborilsa, qolgan rasmlar ham to'liq yetib
+boradi — suhbat yopilgan bo'lsa ham.
+
 ### Buyruqlar
 
 | Buyruq | Vazifasi |

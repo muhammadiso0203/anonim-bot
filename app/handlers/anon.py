@@ -15,6 +15,7 @@ from app.states import AnonReply, AnonSend
 from app.utils import (
     FAIL,
     OK,
+    album_route,
     content_kind,
     is_forbidden_content,
     relay_message,
@@ -56,6 +57,15 @@ async def _can_send_to(message: Message, lang: str, target: Any, sender_id: int)
     return True
 
 
+async def _show_own_link(message: Message, lang: str) -> None:
+    """Xabar yuborilgandan keyin foydalanuvchiga o'z havolasini ko'rsatadi."""
+    user = await db.get_user(message.from_user.id)
+    if user is None:
+        return
+    link = user_link(user["code"])
+    await message.answer(t(lang, "start_main", link=link), reply_markup=share_kb(lang, link))
+
+
 async def _delete_pair(bot: Bot, chat_id: int, row) -> bool:
     """Xabar va uning rasmini qabul qiluvchi chatidan o'chiradi."""
     ok = False
@@ -94,12 +104,21 @@ async def on_anon_message(
         return
 
     result, mid = await relay_message(bot, message, sender_id, target, kind="anon")
-    if result == OK:
-        await message.answer(
-            t(lang, "sent_ok"), reply_markup=sent_kb(lang, mid) if mid else None
-        )
-    elif result == FAIL:
+
+    if result == FAIL:
+        await state.clear()
         await message.answer(t(lang, "receiver_unavailable"))
+        return
+    if result != OK:          # albomning davomi — tasdiq takrorlanmaydi
+        return
+
+    # Bitta xabardan keyin suhbat yopiladi: keyingi oddiy xabarlar
+    # boshqa odamga ketib qolmasin. Yana yozish — tugma orqali.
+    await state.clear()
+    await message.answer(
+        t(lang, "sent_ok"), reply_markup=sent_kb(lang, mid) if mid else None
+    )
+    await _show_own_link(message, lang)
 
 
 # ------------------------------- javob berish: tugma orqali yoki surib
@@ -297,6 +316,29 @@ async def cb_cancel(
             await call.message.edit_text(t(lang, "cancelled"))
         except Exception:  # noqa: BLE001
             pass
+
+
+# ------------------- albomning qolgan rasmlari (suhbat yopilgandan keyin ham)
+
+@router.message(F.media_group_id)
+async def on_album_rest(message: Message, lang: str, user, bot: Bot) -> None:
+    route = album_route(message.from_user.id, message.media_group_id)
+    if route is None:
+        link = user_link(user["code"])
+        await message.answer(
+            t(lang, "start_main", link=link), reply_markup=share_kb(lang, link)
+        )
+        return
+
+    receiver_id, kind, parent_id = route
+    target = await db.get_user(int(receiver_id))
+    if target is None or not _content_ok(message) or too_long(message):
+        return
+    if await db.is_blocked(int(target["user_id"]), message.from_user.id):
+        return
+    await relay_message(
+        bot, message, message.from_user.id, target, kind=kind, parent_id=parent_id
+    )
 
 
 # ----------------------------------- boshqa har qanday xabar -> /start ekrani

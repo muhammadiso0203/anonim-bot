@@ -56,6 +56,39 @@ FORBIDDEN_CONTENT = ("contact", "poll", "dice", "game", "story", "invoice", "pai
 _albums: dict[tuple[str, int], float] = {}
 _ALBUM_TTL = 60.0
 
+#: Albomning qolgan bo'laklari qayerga ketishi: (yuboruvchi, albom) -> yo'nalish.
+#: Bitta xabardan keyin suhbat yopiladi, lekin albomning qolgan rasmlari
+#: baribir o'sha odamga yetib borishi kerak.
+_album_routes: dict[tuple[int, str], tuple[float, int, str, Optional[int]]] = {}
+
+
+def remember_album(
+    message: Message, sender_id: int, receiver_id: int, kind: str, parent_id: Optional[int]
+) -> None:
+    group = getattr(message, "media_group_id", None)
+    if not group:
+        return
+    now = time.monotonic()
+    if len(_album_routes) > 5_000:
+        for key, item in list(_album_routes.items()):
+            if now - item[0] > _ALBUM_TTL:
+                _album_routes.pop(key, None)
+    _album_routes[(sender_id, str(group))] = (now, receiver_id, kind, parent_id)
+
+
+def album_route(sender_id: int, group: str | None):
+    """Albomning davomi bo'lsa — (qabul qiluvchi, tur, ota-xabar)."""
+    if not group:
+        return None
+    item = _album_routes.get((sender_id, str(group)))
+    if item is None:
+        return None
+    ts, receiver_id, kind, parent_id = item
+    if time.monotonic() - ts > _ALBUM_TTL:
+        _album_routes.pop((sender_id, str(group)), None)
+        return None
+    return receiver_id, kind, parent_id
+
 #: relay_message natijalari
 OK = "ok"                # yuborildi, tasdiq ko'rsatiladi
 OK_SILENT = "ok_silent"  # albomning davomi — tasdiq takrorlanmaydi
@@ -246,6 +279,8 @@ async def relay_message(
                 reply_markup=markup,
             )
             dest_id = sent.message_id
+
+        remember_album(message, sender_id, receiver_id, kind, parent_id)
 
         if mid is not None:
             if config.AUTO_IMAGE_CARD and kind == "anon" and message.text and dest_id2 is None:
