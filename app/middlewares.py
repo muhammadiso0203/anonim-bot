@@ -12,7 +12,7 @@ import config
 from app import database as db
 from app.keyboards import sub_kb
 from app.utils import missing_channels
-from app.locales import DEFAULT_LANG, t
+from app.locales import DEFAULT_LANG, alert, t
 
 log = logging.getLogger(__name__)
 
@@ -117,7 +117,7 @@ class GateMiddleware(BaseMiddleware):
             if isinstance(event, Message):
                 await event.answer(t(lang, "you_are_banned"))
             elif isinstance(event, CallbackQuery):
-                await event.answer(t(lang, "you_are_banned"), show_alert=True)
+                await event.answer(alert(lang, "you_are_banned"), show_alert=True)
             return None
 
         # --- «Tekshirish» tugmasining o'zi o'tkazib yuboriladi

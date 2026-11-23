@@ -42,7 +42,7 @@ from app.keyboards import (
     emoji_list_kb,
     users_kb,
 )
-from app.locales import t
+from app.locales import alert, t
 from app.states import AdminAdd, AdminBroadcast, AdminChannel, EmojiSet
 
 log = logging.getLogger(__name__)
@@ -321,7 +321,7 @@ async def cb_admin(
         return
     elif action == "bc_stop":
         _bc_stop.add(call.from_user.id)
-        await call.answer(t(lang, "bc_stopped"), show_alert=True)
+        await call.answer(alert(lang, "bc_stopped"), show_alert=True)
         return
     elif action == "channels":
         await state.clear()
@@ -333,20 +333,20 @@ async def cb_admin(
         return
     elif action == "ch_rm":
         await db.remove_channel(callback_data.arg)
-        await call.answer(t(lang, "channel_removed"))
+        await call.answer(alert(lang, "channel_removed"))
         text, markup = await _channels_view(lang)
     elif action == "banned":
         await state.clear()
         text, markup = await _banned_view(lang)
     elif action == "unban":
         await db.unban_user(callback_data.arg)
-        await call.answer(t(lang, "unban_done"))
+        await call.answer(alert(lang, "unban_done"))
         text, markup = await _banned_view(lang)
     elif action == "rban":
         row = await db.get_message(callback_data.arg)
         if row is not None:
             await db.ban_user(int(row["sender_id"]), reason="shikoyat")
-        await call.answer(t(lang, "ban_done"), show_alert=True)
+        await call.answer(alert(lang, "ban_done"), show_alert=True)
         if call.message is not None:
             try:
                 await call.message.edit_reply_markup(reply_markup=None)
@@ -354,7 +354,7 @@ async def cb_admin(
                 pass
         return
     elif action == "rskip":
-        await call.answer(t(lang, "report_closed"))
+        await call.answer(alert(lang, "report_closed"))
         if call.message is not None:
             try:
                 await call.message.edit_reply_markup(reply_markup=None)
@@ -404,10 +404,10 @@ async def cb_admin(
         return
     elif action == "rm":
         await db.remove_admin(callback_data.arg)
-        await call.answer(t(lang, "admin_removed", uid=callback_data.arg), show_alert=True)
+        await call.answer(alert(lang, "admin_removed", uid=callback_data.arg), show_alert=True)
         text, markup = await _admins_view(lang)
     elif action == "owner":
-        await call.answer(t(lang, "admin_is_owner"), show_alert=True)
+        await call.answer(alert(lang, "admin_is_owner"), show_alert=True)
         return
     elif action == "close":
         await state.clear()
@@ -495,12 +495,12 @@ async def cb_emoji(
         if 0 <= idx < len(emoji_pack.EDITABLE):
             await emoji_pack.reset(emoji_pack.EDITABLE[idx][0])
         await state.clear()
-        await call.answer(t(lang, "emoji_reset_ok"))
+        await call.answer(alert(lang, "emoji_reset_ok"))
         text, markup = _emoji_view(lang)
     elif action == "resetall":
         await emoji_pack.reset_all()
         await state.clear()
-        await call.answer(t(lang, "emoji_resetall_ok"))
+        await call.answer(alert(lang, "emoji_resetall_ok"))
         text, markup = _emoji_view(lang)
     else:
         await call.answer()
@@ -605,7 +605,7 @@ async def _run_broadcast(
     target = int(data.get("bc_target", 0))
     await state.clear()
     if not chat_id or not msg_id:
-        await call.answer(t(lang, "msg_not_found"), show_alert=True)
+        await call.answer(alert(lang, "msg_not_found"), show_alert=True)
         return
 
     await call.answer()

@@ -1,6 +1,7 @@
 """Uch tilli matnlar. O'zbekchasi @anonAskBot dagi matnlarga moslangan."""
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from app import emoji_pack
@@ -1067,6 +1068,24 @@ def label(lang: str | None, key: str, /, **kwargs: Any) -> str:
     """Tugma yozuvining xom ko'rinishi — emoji almashtirilmagan holda.
     Uni keyboards.py dagi _b() qayta ishlaydi."""
     return _fill(_raw(lang, key), kwargs)
+
+
+_TAG_RE = re.compile(r"<[^>]+>")
+_ENTITIES = (("&lt;", "<"), ("&gt;", ">"), ("&quot;", '"'), ("&#39;", "'"), ("&amp;", "&"))
+
+
+def alert(lang: str | None, key: str, /, **kwargs: Any) -> str:
+    """Qalqib chiquvchi oyna (callback alert) uchun matn.
+
+    Telegram bu yerda HTML ni o'qimaydi, shuning uchun teglar olib tashlanadi
+    va premium emoji o'rniga uning oddiy ko'rinishi qo'yiladi.
+    """
+    text = _TAG_RE.sub("", emoji_pack.for_button(_raw(lang, key)))
+    text = _fill(text, kwargs)
+    text = _TAG_RE.sub("", text)
+    for entity, char in _ENTITIES:
+        text = text.replace(entity, char)
+    return text.strip()
 
 
 def tb(lang: str | None, key: str, /, **kwargs: Any) -> str:

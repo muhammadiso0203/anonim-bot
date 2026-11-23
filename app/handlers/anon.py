@@ -18,7 +18,7 @@ from app.keyboards import (
     sent_kb,
     share_kb,
 )
-from app.locales import t
+from app.locales import alert, t
 from app.states import AnonReply, AnonSend
 from app.utils import (
     FAIL,
@@ -168,15 +168,15 @@ async def cb_reply(
 ) -> None:
     row = await db.get_message(callback_data.mid)
     if row is None or int(row["receiver_id"]) != call.from_user.id:
-        await call.answer(t(lang, "msg_not_found"), show_alert=True)
+        await call.answer(alert(lang, "msg_not_found"), show_alert=True)
         return
 
     target = await db.get_user(int(row["sender_id"]))
     if target is None:
-        await call.answer(t(lang, "user_not_found"), show_alert=True)
+        await call.answer(alert(lang, "user_not_found"), show_alert=True)
         return
     if await db.is_blocked(int(target["user_id"]), call.from_user.id):
-        await call.answer(t(lang, "you_are_blocked"), show_alert=True)
+        await call.answer(alert(lang, "you_are_blocked"), show_alert=True)
         return
 
     await state.set_state(AnonReply.writing)
@@ -223,16 +223,16 @@ async def cb_make_image(
 ) -> None:
     row = await db.get_message(callback_data.mid)
     if row is None or int(row["receiver_id"]) != call.from_user.id:
-        await call.answer(t(lang, "msg_not_found"), show_alert=True)
+        await call.answer(alert(lang, "msg_not_found"), show_alert=True)
         return
     body = (row["body"] or "").strip()
     if not body:
-        await call.answer(t(lang, "img_no_text"), show_alert=True)
+        await call.answer(alert(lang, "img_no_text"), show_alert=True)
         return
 
     buf = render_card(body, get_bot_username())
     if buf is None:
-        await call.answer(t(lang, "img_failed"), show_alert=True)
+        await call.answer(alert(lang, "img_failed"), show_alert=True)
         return
     await call.answer()
     await bot.send_photo(
@@ -246,11 +246,11 @@ async def cb_delete(
 ) -> None:
     row = await db.get_message(callback_data.mid)
     if row is None or int(row["receiver_id"]) != call.from_user.id:
-        await call.answer(t(lang, "msg_not_found"), show_alert=True)
+        await call.answer(alert(lang, "msg_not_found"), show_alert=True)
         return
     await _delete_pair(bot, call.from_user.id, row)
     await db.delete_message(int(row["id"]))
-    await call.answer(t(lang, "deleted_ok"))
+    await call.answer(alert(lang, "deleted_ok"))
 
 
 @router.callback_query(MsgCB.filter(F.action == "report"))
@@ -259,10 +259,10 @@ async def cb_report(
 ) -> None:
     row = await db.get_message(callback_data.mid)
     if row is None or int(row["receiver_id"]) != call.from_user.id:
-        await call.answer(t(lang, "msg_not_found"), show_alert=True)
+        await call.answer(alert(lang, "msg_not_found"), show_alert=True)
         return
     if not await db.mark_reported(int(row["id"])):
-        await call.answer(t(lang, "report_already"), show_alert=True)
+        await call.answer(alert(lang, "report_already"), show_alert=True)
         return
 
     body = (row["body"] or "").strip() or f"[{row['content']}]"
@@ -285,17 +285,17 @@ async def cb_report(
         except Exception:  # noqa: BLE001
             pass
 
-    await call.answer(t(lang, "report_sent"), show_alert=True)
+    await call.answer(alert(lang, "report_sent"), show_alert=True)
 
 
 @router.callback_query(MsgCB.filter(F.action == "block"))
 async def cb_block(call: CallbackQuery, callback_data: MsgCB, lang: str) -> None:
     row = await db.get_message(callback_data.mid)
     if row is None or int(row["receiver_id"]) != call.from_user.id:
-        await call.answer(t(lang, "msg_not_found"), show_alert=True)
+        await call.answer(alert(lang, "msg_not_found"), show_alert=True)
         return
     await db.block_user(call.from_user.id, int(row["sender_id"]))
-    await call.answer(t(lang, "blocked_ok"), show_alert=True)
+    await call.answer(alert(lang, "blocked_ok"), show_alert=True)
 
 
 # --------------------------- yuboruvchi tugmalari: yana yozish / qaytarib olish
@@ -306,12 +306,12 @@ async def cb_send_again(
 ) -> None:
     row = await db.get_message(callback_data.mid)
     if row is None or int(row["sender_id"]) != call.from_user.id:
-        await call.answer(t(lang, "msg_not_found"), show_alert=True)
+        await call.answer(alert(lang, "msg_not_found"), show_alert=True)
         return
 
     target = await db.get_user(int(row["receiver_id"]))
     if target is None:
-        await call.answer(t(lang, "user_not_found"), show_alert=True)
+        await call.answer(alert(lang, "user_not_found"), show_alert=True)
         return
 
     await state.set_state(AnonSend.writing)
@@ -329,12 +329,12 @@ async def cb_unsend(
 ) -> None:
     row = await db.get_message(callback_data.mid)
     if row is None or int(row["sender_id"]) != call.from_user.id:
-        await call.answer(t(lang, "msg_not_found"), show_alert=True)
+        await call.answer(alert(lang, "msg_not_found"), show_alert=True)
         return
 
     deleted = await _delete_pair(bot, int(row["receiver_id"]), row)
     if not deleted:
-        await call.answer(t(lang, "unsend_failed"), show_alert=True)
+        await call.answer(alert(lang, "unsend_failed"), show_alert=True)
         return
 
     await db.delete_message(int(row["id"]))

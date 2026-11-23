@@ -31,7 +31,7 @@ from app.keyboards import (
     share_kb,
     url_confirm_kb,
 )
-from app.locales import COMMANDS, LANG_NAMES, t
+from app.locales import COMMANDS, LANG_NAMES, alert, t
 from app.states import Issue
 from app.utils import missing_channels, user_link
 
@@ -137,7 +137,7 @@ async def cb_url(call: CallbackQuery, callback_data: UrlCB, lang: str, user) -> 
     if not callback_data.ok:
         text, markup = await _start_view(user, lang)
         await _safe_edit(call, text, markup)
-        await call.answer(t(lang, "cancelled"))
+        await call.answer(alert(lang, "cancelled"))
         return
 
     code = await db.regenerate_code(call.from_user.id)
@@ -208,10 +208,10 @@ async def cmd_cancel(message: Message, state: FSMContext, lang: str) -> None:
 @router.callback_query(SubCB.filter())
 async def cb_sub_check(call: CallbackQuery, lang: str, user, bot: Bot) -> None:
     if await missing_channels(bot, call.from_user.id):
-        await call.answer(t(lang, "sub_fail"), show_alert=True)
+        await call.answer(alert(lang, "sub_fail"), show_alert=True)
         return
 
-    await call.answer(t(lang, "sub_ok"))
+    await call.answer(alert(lang, "sub_ok"))
     if call.message is not None:
         try:
             await call.message.delete()
@@ -270,7 +270,7 @@ async def cb_lang(call: CallbackQuery, callback_data: LangCB, lang: str, bot: Bo
     new_lang = callback_data.code
     text, markup = await _settings_view(user, new_lang)
     await _safe_edit(call, text, markup)
-    await call.answer(t(new_lang, "lang_set"))
+    await call.answer(alert(new_lang, "lang_set"))
 
 
 @router.callback_query(ToggleCB.filter(F.field == "accepting"))
@@ -280,7 +280,7 @@ async def cb_toggle_accepting(call: CallbackQuery, lang: str, user) -> None:
     user = await db.get_user(call.from_user.id)
     text, markup = await _settings_view(user, lang)
     await _safe_edit(call, text, markup)
-    await call.answer(t(lang, "accepting_on" if new_value else "accepting_off"))
+    await call.answer(alert(lang, "accepting_on" if new_value else "accepting_off"))
 
 
 @router.callback_query(UnblockCB.filter())
@@ -288,4 +288,4 @@ async def cb_unblock(call: CallbackQuery, callback_data: UnblockCB, lang: str, u
     await db.unblock_user(call.from_user.id, callback_data.uid)
     text, markup = await _blocked_view(user, lang)
     await _safe_edit(call, text, markup)
-    await call.answer(t(lang, "unblocked_ok"))
+    await call.answer(alert(lang, "unblocked_ok"))
