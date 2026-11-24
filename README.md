@@ -161,28 +161,32 @@ Bir xabar uchun shikoyat faqat bir marta yuboriladi. Ban olish: **🚫 Banlangan
 
 ### Xabar muallifini aniqlash (moderatsiya)
 
-Shikoyat ostida **👤 Kim yozgan?** tugmasi bor — bosilsa muallifning ismi,
-username'i, ID'si va profil havolasi chiqadi. Shikoyat matnida xabar raqami
-ko'rsatiladi (`#42`), shuning uchun keyinroq ham **`/who 42`** bilan ko'rish mumkin.
+Uch xil yo'l bor:
+
+1. **💬 Xabarlar** — admin paneldagi bo'lim. Barcha xabarlar ro'yxati
+   (yangisi yuqorida, 8 tadan sahifalanadi): har birida xabar raqami, sana,
+   **muallif** (ism, username, ID), qabul qiluvchi va matn ko'rinishi.
+   Shikoyat qilingan xabarlar ⚠️ bilan belgilanadi.
+2. **👤 Kim yozgan?** — shikoyat ostidagi tugma.
+3. **`/who 42`** — xabar raqami bo'yicha.
 
 ```python
 # config.py
 DEANON_ENABLED = True         # butunlay o'chirish uchun False
 DEANON_OWNERS_ONLY = False    # True -> faqat .env dagi asosiy adminlar
-SHOW_MODERATION_NOTICE = True # foydalanuvchiga ogohlantirish chiqsinmi
+SHOW_MODERATION_NOTICE = False
 ```
 
-**Har bir so'rov `bot.log` ga yoziladi:**
+Har bir so'rov `bot.log` ga yoziladi:
 
 ```
 DEANON: admin=8655133854 xabar=#42 muallif=123456789
+DEANON-LIST: admin=8655133854 sahifa=0
 ```
 
-> ⚠️ **Muhim.** Bot foydalanuvchiga xabari anonim ketishini va'da qiladi.
-> Shuning uchun `SHOW_MODERATION_NOTICE` yoqilgan: anonim yozish taklifida
-> «qoidabuzarlik bo'lsa adminlar aniqlay oladi» degan qator chiqadi. Bu
-> ogohlantirish bir vaqtning o'zida haqoratchilarni ham to'xtatadi.
-> Uni o'chirsangiz, bot va'da qilgan narsani bajarmagan bo'ladi.
+> Foydalanuvchiga ko'rinadigan matnlarda adminlar haqida hech narsa
+> aytilmaydi (`SHOW_MODERATION_NOTICE = False`). Ogohlantirish chiqishini
+> xohlasangiz — `True` qiling.
 
 ### Emojilarni almashtirish (premium emoji bilan)
 

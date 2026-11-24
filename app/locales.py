@@ -329,6 +329,19 @@ TEXTS: dict[str, dict[str, str]] = {
             "🚫 <b>Siz botdan foydalana olmaysiz.</b>\n"
             "Anonim xabar yuborish huquqingiz adminlar tomonidan cheklangan."
         ),
+        "btn_adm_messages": "💬 Xabarlar",
+        "messages_title": (
+            "💬 <b>Xabarlar</b> — {total} ta\n"
+            "<blockquote>Eng yangisi yuqorida. Muallif har bir xabar ostida "
+            "ko'rsatilgan.</blockquote>\n"
+            "{rows}"
+        ),
+        "messages_row": (
+            "<code>#{mid}</code> · {date} {flag}\n"
+            "👤 {author} → {receiver}\n"
+            "<blockquote>{preview}</blockquote>"
+        ),
+        "messages_empty": "💬 Hali xabar yo'q.",
         "btn_adm_banned": "🚫 Banlanganlar",
         "banned_title": "🚫 <b>Banlanganlar</b> — {count} ta\n\nBanni olish uchun bosing:",
         "banned_empty": "✅ Banlangan foydalanuvchi yo'q.",
@@ -670,6 +683,18 @@ TEXTS: dict[str, dict[str, str]] = {
             "🚫 <b>Вы не можете пользоваться ботом.</b>\n"
             "Админы ограничили вам отправку анонимных сообщений."
         ),
+        "btn_adm_messages": "💬 Сообщения",
+        "messages_title": (
+            "💬 <b>Сообщения</b> — {total}\n"
+            "<blockquote>Новые сверху. Автор указан под каждым сообщением.</blockquote>\n"
+            "{rows}"
+        ),
+        "messages_row": (
+            "<code>#{mid}</code> · {date} {flag}\n"
+            "👤 {author} → {receiver}\n"
+            "<blockquote>{preview}</blockquote>"
+        ),
+        "messages_empty": "💬 Сообщений пока нет.",
         "btn_adm_banned": "🚫 Забаненные",
         "banned_title": "🚫 <b>Забаненные</b> — {count}\n\nНажмите, чтобы разбанить:",
         "banned_empty": "✅ Забаненных нет.",
@@ -1006,6 +1031,18 @@ TEXTS: dict[str, dict[str, str]] = {
             "🚫 <b>You can't use this bot.</b>\n"
             "The admins have restricted your access to anonymous messaging."
         ),
+        "btn_adm_messages": "💬 Messages",
+        "messages_title": (
+            "💬 <b>Messages</b> — {total}\n"
+            "<blockquote>Newest first. The author is shown under each one.</blockquote>\n"
+            "{rows}"
+        ),
+        "messages_row": (
+            "<code>#{mid}</code> · {date} {flag}\n"
+            "👤 {author} → {receiver}\n"
+            "<blockquote>{preview}</blockquote>"
+        ),
+        "messages_empty": "💬 No messages yet.",
         "btn_adm_banned": "🚫 Banned",
         "banned_title": "🚫 <b>Banned</b> — {count}\n\nTap to unban:",
         "banned_empty": "✅ Nobody is banned.",

@@ -474,6 +474,30 @@ async def daily_stats(days: int = 7) -> list[dict]:
     return out
 
 
+# ------------------------------------------------------ xabarlar ro'yxati
+
+_MESSAGE_LIST_SQL = (
+    "SELECT m.id, m.sender_id, m.receiver_id, m.kind, m.content, m.body,"
+    " m.created_at, m.reported,"
+    " su.first_name AS s_name, su.username AS s_username,"
+    " ru.first_name AS r_name, ru.username AS r_username"
+    " FROM messages m"
+    " LEFT JOIN users su ON su.user_id = m.sender_id"
+    " LEFT JOIN users ru ON ru.user_id = m.receiver_id"
+    " ORDER BY m.id DESC"
+)
+
+
+async def messages_count() -> int:
+    return await _scalar("SELECT COUNT(*) FROM messages")
+
+
+async def messages_page(limit: int, offset: int) -> list:
+    """Eng yangi xabarlar birinchi bo'lib, yuboruvchi va qabul qiluvchi bilan."""
+    cur = await db().execute(_MESSAGE_LIST_SQL + " LIMIT ? OFFSET ?", (limit, offset))
+    return list(await cur.fetchall())
+
+
 # ------------------------------------------------- foydalanuvchilar ro'yxati
 
 _USER_LIST_SQL = (

@@ -53,7 +53,7 @@ DEANON_OWNERS_ONLY: bool = False
 
 # Anonim yozish taklifida "qoidabuzarlikda admin aniqlay oladi" degan
 # ogohlantirish chiqsinmi. Halol bo'lgani uchun yoqilgan.
-SHOW_MODERATION_NOTICE: bool = True
+SHOW_MODERATION_NOTICE: bool = False
 
 # Tugmalarni rangli qilish (Bot API 9.4+):
 #   yashil — ijobiy amallar, qizil — o'chirish/bekor qilish, ko'k — qolgani.

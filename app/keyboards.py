@@ -228,18 +228,21 @@ def admin_kb(lang: str) -> InlineKeyboardMarkup:
     )
     kb.row(
         _b(label(lang, "btn_adm_users"), callback_data=AdminCB(action="users").pack()),
-        _b(label(lang, "btn_adm_banned"), style=RED, callback_data=AdminCB(action="banned").pack()),
+        _b(label(lang, "btn_adm_messages"), callback_data=AdminCB(action="msgs").pack()),
     )
     kb.row(
-        _b(label(lang, "btn_adm_broadcast"), callback_data=AdminCB(action="broadcast").pack()),
+        _b(label(lang, "btn_adm_banned"), style=RED, callback_data=AdminCB(action="banned").pack()),
         _b(label(lang, "btn_adm_channels"), callback_data=AdminCB(action="channels").pack()),
     )
     kb.row(
+        _b(label(lang, "btn_adm_broadcast"), callback_data=AdminCB(action="broadcast").pack()),
         _b(label(lang, "btn_adm_admins"), callback_data=AdminCB(action="admins").pack()),
-        _b(label(lang, "btn_adm_emoji"), callback_data=EmojiCB(action="back").pack()),
     )
     kb.row(
+        _b(label(lang, "btn_adm_emoji"), callback_data=EmojiCB(action="back").pack()),
         _b(label(lang, "btn_adm_settings"), callback_data=AdminCB(action="settings").pack()),
+    )
+    kb.row(
         _b(label(lang, "btn_adm_backup"), style=GREEN, callback_data=AdminCB(action="backup").pack()),
     )
     kb.row(
@@ -268,21 +271,27 @@ def admins_kb(lang: str, rows: list, owners: list[int]) -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
+def _pager(kb, lang: str, action: str, page: int, pages: int) -> None:
+    """◀️ 1/5 ▶️ qatori."""
+    if pages <= 1:
+        return
+    kb.row(
+        _b(label(lang, "btn_prev"),
+           callback_data=AdminCB(action=action, arg=(page - 1) % pages).pack()),
+        InlineKeyboardButton(
+            text=f"{page + 1}/{pages}",
+            callback_data=AdminCB(action=action, arg=page).pack(),
+            **_style(BLUE),
+        ),
+        _b(label(lang, "btn_next"),
+           callback_data=AdminCB(action=action, arg=(page + 1) % pages).pack()),
+    )
+
+
 def users_kb(lang: str, page: int, pages: int) -> InlineKeyboardMarkup:
     """Foydalanuvchilar ro'yxati: sahifalash + CSV."""
     kb = InlineKeyboardBuilder()
-    if pages > 1:
-        kb.row(
-            _b(label(lang, "btn_prev"),
-               callback_data=AdminCB(action="users", arg=(page - 1) % pages).pack()),
-            InlineKeyboardButton(
-                text=f"{page + 1}/{pages}",
-                callback_data=AdminCB(action="users", arg=page).pack(),
-                **_style(BLUE),
-            ),
-            _b(label(lang, "btn_next"),
-               callback_data=AdminCB(action="users", arg=(page + 1) % pages).pack()),
-        )
+    _pager(kb, lang, "users", page, pages)
     kb.row(
         _b(
             label(lang, "btn_users_csv"),
@@ -290,6 +299,14 @@ def users_kb(lang: str, page: int, pages: int) -> InlineKeyboardMarkup:
             callback_data=AdminCB(action="users_csv").pack(),
         )
     )
+    kb.row(_b(label(lang, "btn_back"), callback_data=AdminCB(action="home").pack()))
+    return kb.as_markup()
+
+
+def messages_kb(lang: str, page: int, pages: int) -> InlineKeyboardMarkup:
+    """Xabarlar ro'yxati: sahifalash."""
+    kb = InlineKeyboardBuilder()
+    _pager(kb, lang, "msgs", page, pages)
     kb.row(_b(label(lang, "btn_back"), callback_data=AdminCB(action="home").pack()))
     return kb.as_markup()
 

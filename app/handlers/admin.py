@@ -40,6 +40,7 @@ from app.keyboards import (
     daily_kb,
     emoji_item_kb,
     emoji_list_kb,
+    messages_kb,
     users_kb,
 )
 from app.locales import alert, t
@@ -247,6 +248,52 @@ async def _resolve_channel(bot: Bot, message: Message):
     return full, link
 
 
+MESSAGES_PER_PAGE = 8
+
+
+def _short(row) -> str:
+    """Qisqa ko'rinish: matn yoki tur belgisi."""
+    body = (row["body"] or "").strip()
+    if not body:
+        return f"[{row['content']}]"
+    body = body.replace("\n", " ")
+    return html.quote(body[:120] + ("…" if len(body) > 120 else ""))
+
+
+def _who(name: Optional[str], username: Optional[str], uid: int) -> str:
+    shown = html.quote((name or "").strip())
+    if username:
+        tag = "@" + html.quote(username)
+        shown = f"{shown} ({tag})" if shown else tag
+    return f"{shown or '—'} · <code>{uid}</code>"
+
+
+async def _messages_view(lang: str, page: int = 0) -> tuple[str, InlineKeyboardMarkup]:
+    total = await db.messages_count()
+    if total == 0:
+        return t(lang, "messages_empty"), admin_back_kb(lang)
+
+    pages = max(1, (total + MESSAGES_PER_PAGE - 1) // MESSAGES_PER_PAGE)
+    page = max(0, min(page, pages - 1))
+    rows = await db.messages_page(MESSAGES_PER_PAGE, page * MESSAGES_PER_PAGE)
+
+    lines = [
+        t(
+            lang,
+            "messages_row",
+            mid=row["id"],
+            date=(row["created_at"] or "")[5:16].replace("T", " "),
+            flag="⚠️" if row["reported"] else "",
+            author=_who(row["s_name"], row["s_username"], row["sender_id"]),
+            receiver=_who(row["r_name"], row["r_username"], row["receiver_id"]),
+            preview=_short(row),
+        )
+        for row in rows
+    ]
+    text = t(lang, "messages_title", total=total, rows="\n\n".join(lines))
+    return text, messages_kb(lang, page, pages)
+
+
 def _can_deanon(user_id: int) -> bool:
     """Bu admin xabar muallifini ko'ra oladimi."""
     if not config.DEANON_ENABLED:
@@ -355,6 +402,13 @@ async def cb_admin(
         text, markup = await _admins_view(lang)
     elif action == "users":
         text, markup = await _users_view(lang, callback_data.arg)
+    elif action == "msgs":
+        if not _can_deanon(call.from_user.id):
+            await call.answer(alert(lang, "admin_only"), show_alert=True)
+            return
+        await state.clear()
+        log.warning("DEANON-LIST: admin=%s sahifa=%s", call.from_user.id, callback_data.arg)
+        text, markup = await _messages_view(lang, callback_data.arg)
     elif action == "users_csv":
         rows = await db.users_all()
         await bot.send_document(
