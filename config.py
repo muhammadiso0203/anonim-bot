@@ -45,6 +45,16 @@ SEND_IMAGE_CARD: bool = True
 # Rasmni so'ramasdan avtomatik yuborish. False bo'lsa — faqat tugma bosilganda.
 AUTO_IMAGE_CARD: bool = False
 
+# MODERATSIYA: adminlar xabar muallifini ko'ra oladimi.
+# Har bir so'rov bot.log ga yoziladi.
+#   DEANON_OWNERS_ONLY = True  -> faqat .env dagi asosiy adminlar
+DEANON_ENABLED: bool = True
+DEANON_OWNERS_ONLY: bool = False
+
+# Anonim yozish taklifida "qoidabuzarlikda admin aniqlay oladi" degan
+# ogohlantirish chiqsinmi. Halol bo'lgani uchun yoqilgan.
+SHOW_MODERATION_NOTICE: bool = True
+
 # Tugmalarni rangli qilish (Bot API 9.4+):
 #   yashil — ijobiy amallar, qizil — o'chirish/bekor qilish, ko'k — qolgani.
 # Eski Telegram versiyalarida ranglar e'tiborsiz qoldiriladi, bot buzilmaydi.

@@ -388,7 +388,7 @@ def banned_kb(lang: str, rows: list) -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
-def report_kb(lang: str, mid: int) -> InlineKeyboardMarkup:
+def report_kb(lang: str, mid: int, with_who: bool = False) -> InlineKeyboardMarkup:
     """Adminga kelgan shikoyat ostidagi tugmalar."""
     kb = InlineKeyboardBuilder()
     kb.row(
@@ -397,6 +397,11 @@ def report_kb(lang: str, mid: int) -> InlineKeyboardMarkup:
         _b(label(lang, "btn_ignore"), style=GREEN,
            callback_data=AdminCB(action="rskip", arg=mid).pack()),
     )
+    if with_who:
+        kb.row(
+            _b(label(lang, "btn_who"),
+               callback_data=AdminCB(action="rwho", arg=mid).pack())
+        )
     return kb.as_markup()
 
 

@@ -7,6 +7,7 @@ from aiogram import Bot, F, Router, html
 from aiogram.fsm.context import FSMContext
 from aiogram.types import BufferedInputFile, CallbackQuery, Message
 
+import config
 from app import database as db
 from app.imagecard import render_card
 from app.keyboards import (
@@ -44,7 +45,10 @@ async def start_anon_session(
     """Foydalanuvchini «anonim yozish» holatiga o'tkazadi."""
     await state.set_state(AnonSend.writing)
     await state.update_data(target_id=int(target["user_id"]))
-    await message.answer(t(lang, "anon_prompt"), reply_markup=cancel_send_kb(lang))
+    text = t(lang, "anon_prompt")
+    if config.DEANON_ENABLED and config.SHOW_MODERATION_NOTICE:
+        text += "\n" + t(lang, "moderation_notice")
+    await message.answer(text, reply_markup=cancel_send_kb(lang))
 
 
 def _content_ok(message: Message) -> bool:
@@ -272,8 +276,13 @@ async def cb_report(
         try:
             await bot.send_message(
                 admin_id,
-                t(alang, "admin_report", text=html.quote(body[:600])),
-                reply_markup=report_kb(alang, int(row["id"])),
+                t(alang, "admin_report", mid=row["id"], text=html.quote(body[:600])),
+                reply_markup=report_kb(
+                    alang,
+                    int(row["id"]),
+                    with_who=config.DEANON_ENABLED
+                    and (not config.DEANON_OWNERS_ONLY or admin_id in config.ADMINS),
+                ),
             )
             # Matnsiz xabar bo'lsa — asl nusxasini ham yuboramiz
             if not row["body"] and row["dest_msg_id"]:

@@ -159,6 +159,31 @@ chiqarib yuboradi — u boshqa hech kimga anonim yoza olmaydi.
 
 Bir xabar uchun shikoyat faqat bir marta yuboriladi. Ban olish: **🚫 Banlanganlar**.
 
+### Xabar muallifini aniqlash (moderatsiya)
+
+Shikoyat ostida **👤 Kim yozgan?** tugmasi bor — bosilsa muallifning ismi,
+username'i, ID'si va profil havolasi chiqadi. Shikoyat matnida xabar raqami
+ko'rsatiladi (`#42`), shuning uchun keyinroq ham **`/who 42`** bilan ko'rish mumkin.
+
+```python
+# config.py
+DEANON_ENABLED = True         # butunlay o'chirish uchun False
+DEANON_OWNERS_ONLY = False    # True -> faqat .env dagi asosiy adminlar
+SHOW_MODERATION_NOTICE = True # foydalanuvchiga ogohlantirish chiqsinmi
+```
+
+**Har bir so'rov `bot.log` ga yoziladi:**
+
+```
+DEANON: admin=8655133854 xabar=#42 muallif=123456789
+```
+
+> ⚠️ **Muhim.** Bot foydalanuvchiga xabari anonim ketishini va'da qiladi.
+> Shuning uchun `SHOW_MODERATION_NOTICE` yoqilgan: anonim yozish taklifida
+> «qoidabuzarlik bo'lsa adminlar aniqlay oladi» degan qator chiqadi. Bu
+> ogohlantirish bir vaqtning o'zida haqoratchilarni ham to'xtatadi.
+> Uni o'chirsangiz, bot va'da qilgan narsani bajarmagan bo'ladi.
+
 ### Emojilarni almashtirish (premium emoji bilan)
 
 `/admin` → **😀 Emojilar** → kerakli emojini tanlang → yangisini yuboring.

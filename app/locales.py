@@ -301,9 +301,25 @@ TEXTS: dict[str, dict[str, str]] = {
         "report_sent": "✅ Shikoyatingiz adminlarga yuborildi.",
         "report_already": "ℹ️ Bu xabar uchun shikoyat allaqachon yuborilgan.",
         "admin_report": (
-            "⚠️ <b>Yangi shikoyat</b>\n"
+            "⚠️ <b>Yangi shikoyat</b>  <code>#{mid}</code>\n"
             "<blockquote>{text}</blockquote>\n"
             "Muallifni banlasangiz, u boshqa hech kimga anonim yoza olmaydi."
+        ),
+        "btn_who": "👤 Kim yozgan?",
+        "author_info": (
+            "👤 <b>Xabar muallifi</b>  <code>#{mid}</code>\n"
+            "<blockquote>Ism: {name}\n"
+            "Username: {username}\n"
+            "ID: <code>{uid}</code>\n"
+            "Yuborilgan: {date}</blockquote>\n"
+            "<a href=\"tg://user?id={uid}\">Profilni ochish</a>\n\n"
+            "⚠️ <i>Bu so'rov jurnalga yozildi.</i>"
+        ),
+        "author_unknown": "⚠️ Muallif topilmadi — xabar o'chirilgan bo'lishi mumkin.",
+        "who_usage": "ℹ️ Ishlatilishi: <code>/who 42</code> — shikoyatdagi xabar raqami.",
+        "moderation_notice": (
+            "<blockquote>⚠️ Qoidabuzarlik bo'lsa, adminlar xabar muallifini "
+            "aniqlay oladi.</blockquote>"
         ),
         "btn_ban": "🚫 Banlash",
         "btn_ignore": "✅ E'tiborsiz",
@@ -626,9 +642,25 @@ TEXTS: dict[str, dict[str, str]] = {
         "report_sent": "✅ Жалоба отправлена админам.",
         "report_already": "ℹ️ На это сообщение жалоба уже отправлена.",
         "admin_report": (
-            "⚠️ <b>Новая жалоба</b>\n"
+            "⚠️ <b>Новая жалоба</b>  <code>#{mid}</code>\n"
             "<blockquote>{text}</blockquote>\n"
             "Если забаните автора, он больше никому не сможет писать анонимно."
+        ),
+        "btn_who": "👤 Кто написал?",
+        "author_info": (
+            "👤 <b>Автор сообщения</b>  <code>#{mid}</code>\n"
+            "<blockquote>Имя: {name}\n"
+            "Username: {username}\n"
+            "ID: <code>{uid}</code>\n"
+            "Отправлено: {date}</blockquote>\n"
+            "<a href=\"tg://user?id={uid}\">Открыть профиль</a>\n\n"
+            "⚠️ <i>Этот запрос записан в журнал.</i>"
+        ),
+        "author_unknown": "⚠️ Автор не найден — сообщение могло быть удалено.",
+        "who_usage": "ℹ️ Использование: <code>/who 42</code> — номер сообщения из жалобы.",
+        "moderation_notice": (
+            "<blockquote>⚠️ При нарушении правил админы могут установить "
+            "автора сообщения.</blockquote>"
         ),
         "btn_ban": "🚫 Забанить",
         "btn_ignore": "✅ Игнорировать",
@@ -946,9 +978,25 @@ TEXTS: dict[str, dict[str, str]] = {
         "report_sent": "✅ Your report was sent to the admins.",
         "report_already": "ℹ️ This message has already been reported.",
         "admin_report": (
-            "⚠️ <b>New report</b>\n"
+            "⚠️ <b>New report</b>  <code>#{mid}</code>\n"
             "<blockquote>{text}</blockquote>\n"
             "If you ban the author, they won't be able to write to anyone anonymously."
+        ),
+        "btn_who": "👤 Who sent it?",
+        "author_info": (
+            "👤 <b>Message author</b>  <code>#{mid}</code>\n"
+            "<blockquote>Name: {name}\n"
+            "Username: {username}\n"
+            "ID: <code>{uid}</code>\n"
+            "Sent: {date}</blockquote>\n"
+            "<a href=\"tg://user?id={uid}\">Open profile</a>\n\n"
+            "⚠️ <i>This lookup has been logged.</i>"
+        ),
+        "author_unknown": "⚠️ Author not found — the message may have been deleted.",
+        "who_usage": "ℹ️ Usage: <code>/who 42</code> — the message number from the report.",
+        "moderation_notice": (
+            "<blockquote>⚠️ If the rules are broken, admins can identify the "
+            "author of a message.</blockquote>"
         ),
         "btn_ban": "🚫 Ban",
         "btn_ignore": "✅ Ignore",

@@ -13,7 +13,7 @@ from typing import Any, Optional
 
 from aiogram import Bot, Router, html
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramRetryAfter
-from aiogram.filters import Command, Filter
+from aiogram.filters import Command, CommandObject, Filter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
     BufferedInputFile,
@@ -247,6 +247,50 @@ async def _resolve_channel(bot: Bot, message: Message):
     return full, link
 
 
+def _can_deanon(user_id: int) -> bool:
+    """Bu admin xabar muallifini ko'ra oladimi."""
+    if not config.DEANON_ENABLED:
+        return False
+    if config.DEANON_OWNERS_ONLY:
+        return user_id in config.ADMINS
+    return True
+
+
+async def _author_text(lang: str, mid: int) -> Optional[str]:
+    """Xabar muallifi haqida ma'lumot. Xabar topilmasa — None."""
+    row = await db.get_message(mid)
+    if row is None:
+        return None
+    author = await db.get_user(int(row["sender_id"]))
+    name = html.quote((author["first_name"] or "").strip()) if author else ""
+    username = (
+        "@" + html.quote(author["username"]) if author and author["username"] else "—"
+    )
+    return t(
+        lang,
+        "author_info",
+        mid=mid,
+        name=name or "—",
+        username=username,
+        uid=row["sender_id"],
+        date=(row["created_at"] or "")[:16].replace("T", " "),
+    )
+
+
+async def _reveal_author(bot: Bot, admin_id: int, lang: str, mid: int) -> None:
+    """Muallifni ko'rsatadi va so'rovni jurnalga yozadi."""
+    text = await _author_text(lang, mid)
+    if text is None:
+        await bot.send_message(admin_id, t(lang, "author_unknown"))
+        return
+    row = await db.get_message(mid)
+    log.warning(
+        "DEANON: admin=%s xabar=#%s muallif=%s",
+        admin_id, mid, row["sender_id"] if row else "?",
+    )
+    await bot.send_message(admin_id, text)
+
+
 async def _safe_edit(call: CallbackQuery, text: str, markup: InlineKeyboardMarkup) -> None:
     if call.message is None:
         return
@@ -270,6 +314,22 @@ async def cmd_admin(message: Message, state: FSMContext, lang: str) -> None:
     await state.clear()
     text, markup = await _home_view(lang)
     await message.answer(text, reply_markup=markup)
+
+
+@router.message(Command("who", "kim"))
+async def cmd_who(
+    message: Message, command: CommandObject, state: FSMContext, lang: str, bot: Bot
+) -> None:
+    """/who 42 — shikoyatdagi xabar raqami bo'yicha muallifni ko'rsatadi."""
+    await state.clear()
+    if not _can_deanon(message.from_user.id):
+        await message.answer(t(lang, "admin_only"))
+        return
+    arg = (command.args or "").strip().lstrip("#")
+    if not arg.isdigit():
+        await message.answer(t(lang, "who_usage"))
+        return
+    await _reveal_author(bot, message.from_user.id, lang, int(arg))
 
 
 @router.message(Command("broadcast"))
@@ -352,6 +412,13 @@ async def cb_admin(
                 await call.message.edit_reply_markup(reply_markup=None)
             except Exception:  # noqa: BLE001
                 pass
+        return
+    elif action == "rwho":
+        if not _can_deanon(call.from_user.id):
+            await call.answer(alert(lang, "admin_only"), show_alert=True)
+            return
+        await call.answer()
+        await _reveal_author(bot, call.from_user.id, lang, callback_data.arg)
         return
     elif action == "rskip":
         await call.answer(alert(lang, "report_closed"))
